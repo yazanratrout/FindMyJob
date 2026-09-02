@@ -4,15 +4,16 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP8 — Milestone 2 complete
-**Resume from:** CP9 — LLM job analyzer. Add `llm/analyzer.py` + prompt +
-`JobAnalysis` output schema (fields already in `models/job.JobAnalysis`), with
-`analyzer_version` and provenance snippets. Add `services/analyze.py` that
-caches by `jd_content_hash` + `analyzer_version` across jobs. Then the `analyze`
-pipeline — but note CP10 `prefilter` runs *before* it in the sequence, so build
-CP10's hard-filter helper first (or stub `prefilter` and slot `analyze` after
-it). Only analyze canonical, active, non-dead jobs without a current analysis.
-Respect a per-run cap; real budget stop is CP14.
+**Last updated:** end of CP9
+**Resume from:** CP10 — Scoring engine. Build `services/scoring.py`: the hard
+filters (`prefilter` — location/hours/language/contract/job-type/recency/
+blacklist, each gated by its hard toggle in settings) and the weighted soft
+score (skills_match, field_relevance, language_fit, hours_fit, seniority_fit,
+recency, salary_fit, company_affinity; weights from `AppSettings.weights`).
+Add a `prefilter` pipeline (before `analyze` in the sequence) writing a
+`JobScore` with `hard_pass`/`hard_failures`, and a `score` pipeline (after
+`analyze`) filling `soft_score`/`soft_breakdown`. Table-driven tests are the
+priority here. `field_relevance` reuses `services/embeddings`.
 
 ---
 
@@ -29,7 +30,7 @@ Respect a per-run cap; real budget stop is CP14.
 | CP6 | ATS connectors + company registry | ✅ done |
 | CP7 | Normalization & enrichment | ✅ done |
 | CP8 | Deduplication | ✅ done |
-| CP9 | LLM job analyzer | ⬜ todo |
+| CP9 | LLM job analyzer | ✅ done |
 | CP10 | Scoring engine | ⬜ todo |
 | CP11 | Judge, blend, decision, documents | ⬜ todo |
 | CP12 | Pipeline orchestrator (wire it all) | ⬜ todo |
@@ -47,7 +48,7 @@ Respect a per-run cap; real budget stop is CP14.
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete**.
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) started** (CP9 done).
 
 ---
 
@@ -62,7 +63,7 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete**.
   cover_letter, eligibility_entry, app_auth.
 - **Pipeline framework** (`pipelines/`): `Pipeline`, `PipelineContext`,
   `PipelineResult`, `Orchestrator` (crash-isolated, timed, stat roll-up,
-  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich` → `dedup`.
+  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich` → `dedup` → `analyze`.
 - **Job sources** (`sources/`): shared rate-limited/retrying `HttpClient`;
   `JobSource` contract; API connectors (Bundesagentur für Arbeit, Adzuna,
   Arbeitnow, The Muse); ATS connectors (Greenhouse, Lever, Personio,
@@ -76,20 +77,22 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete**.
   `services/embeddings`, vectors in `job_embedding`).
 - **LLM layer** (`llm/`): `LlmClient` (tier routing, content-hash cache,
   cost/token accounting, JSON mode + one repair retry, injectable network fn),
-  prompt loader, `profile_parser`, `keyword_suggest`.
+  prompt loader, `profile_parser`, `keyword_suggest`, `analyzer`.
 - **Services**: `bootstrap`, `documents`, `profile`, `settings`, `geocode`,
-  `semester`, `companies`, `jobs`, `enrich`, `embeddings`, `doctor`.
+  `semester`, `companies`, `jobs`, `enrich`, `embeddings`, `analyze`, `doctor`.
+- **Analyze pipeline** (`analyze`): LLM structured extraction into `job_analysis`
+  (cached, versioned, capped per run).
 - **API** (`api/`): `/api/health`, `/api/documents*`, `/api/profile*`,
   `/api/settings*`, `/api/semester-terms*`, `/api/companies*`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: 95 passing (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: 100 passing (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- No analysis / scoring / cover-letter pipelines yet (CP9–CP11); the run stops
-  after `dedup`.
+- No scoring / judge / cover-letter pipelines yet (CP10–CP11); the run stops
+  after `analyze`.
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.
 - Image/scanned-PDF documents are stored but not OCR'd (CP3 vision fallback

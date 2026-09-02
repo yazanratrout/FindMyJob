@@ -5,6 +5,20 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP9 — LLM job analyzer
+- `llm/analyzer`: `analyze_posting()` + prompt + `JobAnalysisResult` schema
+  (must/nice haves, skills, languages+CEFR, weekly hours + basis, contract type,
+  salary, dates, enrollment/English-only/application-method, documents
+  requested, seniority, red flags, and a `source_snippets` provenance map).
+  `ANALYZER_VERSION` constant invalidates cached analyses on prompt change.
+- `services/analyze`: `analyze_job()` — skip if a current-version `JobAnalysis`
+  exists or the text is too thin; otherwise call the analyzer and persist.
+- `pipelines/analyze` (non-critical): canonical + active jobs with real text and
+  no current analysis, capped at 120/run. Identical postings across sources hit
+  the LLM client cache (one call). `client_factory` injectable for tests.
+- Registered after `dedup` (CP10 will insert `prefilter` before it).
+- 5 new tests (100 total); ruff + mypy clean. No new dependencies.
+
 ### CP8 — Deduplication
 - `services/embeddings`: lazy local `fastembed` embedder
   (`intfloat/multilingual-e5-small`, cached in `data/models/`); degrades to

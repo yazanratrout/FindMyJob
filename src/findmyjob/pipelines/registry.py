@@ -6,6 +6,7 @@ else needs to change — the orchestrator picks up whatever this returns.
 
 from __future__ import annotations
 
+from findmyjob.pipelines.analyze import AnalyzePipeline
 from findmyjob.pipelines.base import Pipeline
 from findmyjob.pipelines.dedup import DedupPipeline
 from findmyjob.pipelines.enrich import EnrichPipeline
@@ -27,6 +28,7 @@ def default_pipelines() -> list[Pipeline]:
         NormalizePipeline(),
         EnrichPipeline(),
         DedupPipeline(),
+        AnalyzePipeline(),
     ]
 
 
