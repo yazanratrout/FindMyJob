@@ -1045,6 +1045,45 @@ proposed weight set; applying it changes future rankings.
 
 ---
 
+## 7. Engineering requirements (non‑negotiable)
+
+These constraints, agreed with the project owner, apply to every checkpoint. The
+full working agreement lives in [`../rules/RULES.md`](../rules/RULES.md); this is
+the summary that shapes the architecture.
+
+1. **Independent pipelines.** Each processing stage is its own pipeline
+   (`src/findmyjob/pipelines/<stage>.py`), implementing the `Pipeline` contract.
+   A pipeline reads and writes the database; it never imports another pipeline.
+   You can add, remove, rewrite or reorder one pipeline without touching the
+   others. Each pipeline is robust in its own right — per‑item errors are caught
+   and reported, not raised.
+2. **One orchestrator.** `pipelines/orchestrator.py` is the only component that
+   knows the full sequence. It runs pipelines in order with a crash barrier
+   around each, records a `PipelineRun` per stage, rolls stats up onto the
+   `Run`, and aborts early only when a pipeline marked `critical` fails. The
+   ordered list lives in `pipelines/registry.py` and nowhere else.
+3. **Automate before spending on the LLM.** Every deterministic filter, cache
+   lookup and cheap heuristic runs *before* any model call. The LLM is the last
+   resort, is cached by content hash, and is bounded by a monthly EUR budget.
+4. **Clean, conventional repo.** `src/` layout, one concern per module, typed
+   public functions, `ruff` + `mypy` clean, tests for every checkpoint. The
+   structure in §2.3 is the reference.
+5. **Secrets only in `.env`.** API keys, passwords and tokens are read from the
+   environment / `.env` (git‑ignored). Nothing secret is ever committed. User
+   preferences are *not* secrets — they live in the database.
+6. **Reproducible environment.** A `.gitignore`, a pinned `requirements.txt`
+   (+ `requirements.lock`) and `requirements-dev.txt`, and a project virtualenv
+   at `./.venv`. All code and tooling run inside that venv.
+7. **Dependency rule.** The moment you reach for a library that is not already
+   in `requirements.txt` / `requirements-dev.txt`, add it there (with a minimum
+   version), reinstall, and refresh `requirements.lock` — before writing the
+   code that imports it. Never rely on a transitively-available package.
+8. **Docs stay current.** After every checkpoint, update
+   [`CHANGELOG.md`](./CHANGELOG.md), [`PROGRESS.md`](./PROGRESS.md), and any
+   affected explanation file in this folder, and the top‑level `README.md`.
+
+---
+
 ## Appendix A — Config & secrets
 
 `.env` (secrets only):

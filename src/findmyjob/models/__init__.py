@@ -16,6 +16,7 @@ from findmyjob.models.config import (
     SemesterTerm,
 )
 from findmyjob.models.eligibility import EligibilityEntry
+from findmyjob.models.geo import GeocodeCache
 from findmyjob.models.job import Job, JobAnalysis, JobEmbedding, JobScore
 from findmyjob.models.llm_cache import LlmCacheEntry
 from findmyjob.models.profile import Document, Profile, ProfileSkill
@@ -31,6 +32,7 @@ __all__ = [
     "CoverLetter",
     "Document",
     "EligibilityEntry",
+    "GeocodeCache",
     "Job",
     "JobAnalysis",
     "JobEmbedding",

@@ -2,76 +2,105 @@
 
 A local, single-user, human-in-the-loop pipeline that finds working-student
 ("Werkstudent") and related student positions in a chosen city, analyzes each
-one, scores how well it fits your profile, and — on your explicit click — drafts
-a tailored cover letter you download as a `.docx` and submit yourself.
+posting, scores how well it fits your profile, and — on your explicit click —
+drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
-It never scrapes sites that forbid it and never submits an application for you.
-See [`docs/IMPLEMENTATION_PLAN.md`](docs/IMPLEMENTATION_PLAN.md) for the full
-design and [`docs/CHANGELOG.md`](docs/CHANGELOG.md) for build progress.
+- **Allowlist sourcing only.** Official / public APIs (Bundesagentur für Arbeit,
+  Adzuna, Arbeitnow, The Muse) and public company ATS endpoints (Greenhouse,
+  Lever, Personio, SmartRecruiters, Ashby). No LinkedIn / StepStone / Indeed
+  scraping.
+- **Automate before spending.** Deterministic filters, caching and heuristics
+  run before any LLM call; model spend is capped by a monthly EUR budget.
+- **Human-in-the-loop.** It recommends; you decide to apply, trigger and review
+  the cover letter, and submit. It never applies for you.
+- **Local & private.** SQLite + files on your machine, bound to `127.0.0.1`.
+  The only outbound calls are to the job APIs you enable and the Anthropic API.
+
+## Documentation
+
+| Where | What |
+|-------|------|
+| [`docs/implementation/IMPLEMENTATION_PLAN.md`](docs/implementation/IMPLEMENTATION_PLAN.md) | Full spec + 25 build checkpoints |
+| [`docs/implementation/PROGRESS.md`](docs/implementation/PROGRESS.md) | Current status / where the build is |
+| [`docs/implementation/ARCHITECTURE.md`](docs/implementation/ARCHITECTURE.md) | System map |
+| [`docs/implementation/PIPELINES.md`](docs/implementation/PIPELINES.md) | Pipeline framework & stages |
+| [`docs/implementation/USER_GUIDE.md`](docs/implementation/USER_GUIDE.md) | Install & use |
+| [`docs/rules/RULES.md`](docs/rules/RULES.md) | Engineering working agreement |
 
 ## Status
 
-Early build. Foundation (config, database, migrations, pipeline framework,
-orchestrator, CLI, health API) is in place. Job sources, analysis, scoring,
-cover letters and the web UI are being added checkpoint by checkpoint.
+Early build — **Milestone 1 (foundation) complete (CP0–CP4).** Working today:
+configuration, database + migrations, the pipeline framework and orchestrator,
+the LLM client (cache + cost accounting), document upload + text extraction,
+LLM CV parsing into a structured profile, and the settings / onboarding backend
+(preferences, keyword suggestions, semester terms, geocoding). No web UI and no
+job sources yet — Milestone 2 (CP5–CP8) is next. See
+[`PROGRESS.md`](docs/implementation/PROGRESS.md).
 
 ## Requirements
 
 - Python 3.12+ (3.13 recommended)
-- Node 20+ (only once the frontend lands)
-- [`just`](https://github.com/casey/just) — optional but recommended
-  (`brew install just`)
+- Node 20+ (only once the frontend lands, CP15)
+- [`just`](https://github.com/casey/just) — optional (`brew install just`)
 
 ## Setup
 
 ```bash
 git clone <this repo> && cd FindMyJob
-cp .env.example .env          # then fill in ANTHROPIC_API_KEY etc.
+cp .env.example .env          # fill in ANTHROPIC_API_KEY, optional source keys
 python3 -m venv .venv
-just setup                    # installs deps, migrates, seeds
-# or without just:
-#   .venv/bin/pip install -r requirements-dev.txt && .venv/bin/pip install -e .
-#   .venv/bin/python -m findmyjob db seed
+just setup                    # install deps, migrate, seed
 ```
 
-Everything runs **inside `./.venv`**. Secrets live only in `.env`, which is
-git-ignored.
+Without `just`:
 
-## Common commands
-
-| Command | Purpose |
-|---|---|
-| `just dev` | start the API on `127.0.0.1:8000` |
-| `just run-pipeline` | run the daily pipeline once, now |
-| `just test` | run the test suite |
-| `just check` | lint + typecheck + tests (what CI runs) |
-| `just doctor` | verify the installation and credentials |
-| `just db-revision "msg"` | create a migration after changing models |
-| `just db-reset` | drop everything and re-seed (destructive) |
-
-## Layout
-
+```bash
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pip install -e .
+.venv/bin/python -m findmyjob db seed
 ```
-src/findmyjob/
-  config.py          process configuration (env / .env)
-  db.py              engine + sessions
-  models/            SQLModel tables
-  pipelines/         pipeline framework + orchestrator + concrete stages
-  sources/           job-source connectors + company registry
-  llm/               Claude client + prompt-backed helpers
-  services/          non-pipeline business logic
-  api/               FastAPI app + routes
-  cli.py             `python -m findmyjob ...`
+
+All code and tooling run **inside `./.venv`**. Secrets live only in `.env`
+(git-ignored). User preferences are stored in the database, not in `.env`.
+
+## Commands
+
+| `just` | equivalent | purpose |
+|--------|-----------|---------|
+| `just dev` | `.venv/bin/python -m uvicorn findmyjob.api.app:app --reload` | start the API on `127.0.0.1:8000` |
+| `just run-pipeline` | `.venv/bin/python -m findmyjob pipeline run` | run the daily pipeline once |
+| `just test` | `.venv/bin/python -m pytest` | run tests |
+| `just check` | ruff + mypy + pytest | full quality gate (run before committing) |
+| `just doctor` | `.venv/bin/python -m findmyjob doctor` | verify the installation |
+| `just db-upgrade` | `.venv/bin/python -m findmyjob db upgrade` | apply migrations |
+| `just db-revision "msg"` | `.venv/bin/python -m alembic revision --autogenerate -m msg` | new migration after a model change |
+| `just db-reset` | `.venv/bin/python -m findmyjob db reset` | drop & re-seed (destructive) |
+| `just lock` | `pip freeze --exclude-editable > requirements.lock` | refresh the lock file |
+
+## Repository layout
+
+```text
+src/findmyjob/      application package (see docs/implementation/ARCHITECTURE.md)
+  config.py db.py normalize.py cli.py
+  models/  schemas/  api/  pipelines/  llm/  sources/  services/
 migrations/          Alembic
 tests/               pytest
-docs/                plan + changelog
-data/                runtime data (git-ignored): db, documents, letters, models
-frontend/            React UI (added later)
+docs/                implementation plan, progress, architecture, rules
+data/                git-ignored runtime data (db, documents, letters, logs)
+frontend/            React UI (from CP15)
+.env / .env.example  secrets (env only)
+requirements*.txt    pinned deps + lock; requirements-dev.txt for tooling
+justfile             task runner
 ```
 
-## Privacy
+## Contributing / continuing the build
 
-All data — your documents, the SQLite database, generated letters — stays on
-your machine. The only outbound calls are to the job-source APIs you enable and
-to the Anthropic API for analysis and cover letters. Bind address is
-`127.0.0.1`.
+Read [`docs/rules/RULES.md`](docs/rules/RULES.md) first. Build one checkpoint at
+a time from the implementation plan; finish it (code + tests + docs + green
+`just check`) before starting the next; keep
+[`PROGRESS.md`](docs/implementation/PROGRESS.md) and
+[`CHANGELOG.md`](docs/implementation/CHANGELOG.md) current in the same commit.
+
+## License
+
+MIT
