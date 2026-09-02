@@ -225,6 +225,30 @@ export interface CoverLetter {
   created_at: string;
 }
 
+export type ApplicationStatus =
+  | "interested"
+  | "preparing"
+  | "applied"
+  | "interview"
+  | "offer"
+  | "rejected"
+  | "withdrawn";
+
+export interface Application {
+  id: number;
+  job_id: number;
+  job_title: string;
+  company: string;
+  job_url: string;
+  apply_url: string | null;
+  status: ApplicationStatus;
+  applied_at: string | null;
+  follow_up_at: string | null;
+  outcome_note: string;
+  documents_used: string[];
+  updated_at: string;
+}
+
 export interface JobDetail extends JobCard {
   jd_text: string | null;
   company_url: string | null;
@@ -234,4 +258,6 @@ export interface JobDetail extends JobCard {
   soft_breakdown: Record<string, ScoreComponent>;
   documents_needed: DocumentNeed[];
   analysis: Record<string, unknown> | null;
+  application_id: number | null;
+  application_status: ApplicationStatus | null;
 }

@@ -4,15 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP19
-**Resume from:** CP20 — Application tracker. Backend: `services/applications`
-(list, update status, applied_at / follow_up_at / documents_used / outcome_note),
-`api/routes/applications.py` (GET/POST/PUT), plus a "follow-ups due" query.
-Cover-letter generation already creates the `application` row (`preparing`).
-Frontend: Tracker page — a board by `ApplicationStatus`
-(interested / preparing / applied / interview / offer / rejected / withdrawn),
-drag between columns, per-card date + notes, "follow-ups due" surfaced on the
-Dashboard. Finishes Milestone 5.
+**Last updated:** end of CP20 — Milestone 5 complete
+**Resume from:** CP21 — Notifications (digest). Backend: `services/notifications`
+(email via SMTP env vars, Telegram via bot token + chat id from settings; a
+`send(subject, markdown, html)` interface); a `notify` pipeline (last in the
+sequence) that composes a digest — run stats, top N new recommendations with
+deep links, follow-ups due, budget/error warnings — and sends it on the
+configured channels. `POST /api/notifications/test`. Then CP22 (eligibility
+module), CP23 (observability/retention/backup), CP24 (packaging).
 
 ---
 
@@ -40,14 +39,14 @@ Dashboard. Finishes Milestone 5.
 | CP17 | Dashboard UI | ✅ done |
 | CP18 | Job detail UI | ✅ done |
 | CP19 | Cover letter generation + DOCX | ✅ done |
-| CP20 | Application tracker | ⬜ todo |
+| CP20 | Application tracker | ✅ done |
 | CP21 | Notifications (digest) | ⬜ todo |
 | CP22 | Eligibility module | ⬜ todo |
 | CP23 | Observability, retention, backup | ⬜ todo |
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) in progress** (CP15–CP19 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete**.
 
 ---
 
@@ -94,18 +93,20 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
 - **Auth** (`services/auth`, `api/deps`, `/api/auth/*`): Argon2 passphrase,
   signed session cookie; all `/api/*` except `health` + `auth` are guarded.
 - **API** (`api/`): `/api/{health,auth,documents,profile,settings,semester-terms,
-  companies,runs,costs,jobs,cover-letters}`.
-- **Frontend** (`frontend/`): auth gate, onboarding wizard, re-editable Settings,
-  ranked dashboard + job-detail drawer with score bars, documents checklist,
-  and **cover-letter generation/edit/download**, Runs list. `just frontend-dev`.
+  companies,runs,costs,jobs,cover-letters,applications}`.
+- **Frontend** (`frontend/`): auth, onboarding wizard, Settings, ranked dashboard
+  (with follow-ups banner) + job-detail drawer (score bars, documents checklist,
+  cover-letter generate/edit/download, status control), **application tracker**
+  board, Runs list. `just frontend-dev`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: ~169 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: ~175 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- Web UI: application tracker (CP20) still to build. No frontend tests yet (CP23).
+- No digest notifications / eligibility module / observability / packaging yet
+  (CP21-CP24). No frontend tests yet (CP23).
 - No application tracker / eligibility module / notifications yet (CP20-CP22).
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.

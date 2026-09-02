@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import {
   useCosts,
+  useFollowUps,
   useHealth,
   useJobs,
   useRuns,
@@ -73,6 +74,7 @@ export function DashboardPage() {
   const health = useHealth();
   const runs = useRuns();
   const costs = useCosts();
+  const followUps = useFollowUps();
   const trigger = useTriggerRun();
 
   const [bucket, setBucket] = useState("recommended");
@@ -91,6 +93,16 @@ export function DashboardPage() {
           {trigger.isPending ? "Starting…" : "Run pipeline now"}
         </Button>
       </div>
+
+      {(followUps.data?.length ?? 0) > 0 && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+          <span className="font-semibold">
+            {followUps.data!.length} follow-up
+            {followUps.data!.length > 1 ? "s" : ""} due:
+          </span>{" "}
+          {followUps.data!.map((a) => a.job_title).join(", ")}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card title="Backend">

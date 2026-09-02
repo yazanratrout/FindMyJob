@@ -76,6 +76,7 @@ def create_app() -> FastAPI:
 
     from findmyjob.api.deps import require_auth
     from findmyjob.api.routes import (
+        applications,
         auth,
         companies,
         costs,
@@ -100,6 +101,7 @@ def create_app() -> FastAPI:
     app.include_router(costs.router, prefix="/api", dependencies=guarded)
     app.include_router(jobs.router, prefix="/api", dependencies=guarded)
     app.include_router(cover_letters.router, prefix="/api", dependencies=guarded)
+    app.include_router(applications.router, prefix="/api", dependencies=guarded)
 
     frontend_dist = REPO_ROOT / "frontend" / "dist"
     if frontend_dist.is_dir():

@@ -5,6 +5,20 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP20 — Application tracker
+- `services/applications`: `get_or_create`, `update_application` (status →
+  auto-stamps `applied_at`; ISO date parsing for `applied_at`/`follow_up_at`;
+  outcome note; documents used), `follow_ups_due` (past `follow_up_at` +
+  status applied/interview).
+- API: `GET /api/applications`, `GET /api/applications/follow-ups`,
+  `POST /api/applications`, `PUT /api/applications/{id}`.
+- `JobDetail` now carries `application_id` / `application_status`.
+- Frontend: Tracker page — a column per `ApplicationStatus`, per-card status
+  select + follow-up date + notes; Dashboard shows a "follow-ups due" banner;
+  job-detail drawer has a status control (creates the application on first use).
+- 6 new backend tests; ruff + mypy clean; `vite build` clean. No new deps.
+- **Milestone 5 complete.**
+
 ### CP19 — Cover letter generation + DOCX
 - `llm/cover_letter`: `generate_cover_letter()` + prompt (posting-specific hook,
   evidence-backed claims, banned-phrase list, language/tone) + result schema

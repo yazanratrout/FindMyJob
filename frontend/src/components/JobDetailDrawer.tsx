@@ -1,9 +1,66 @@
 import { useState } from "react";
-import { useJobDetail } from "@/api/hooks";
-import type { DocumentNeed, ScoreComponent } from "@/api/types";
+import {
+  useCreateApplication,
+  useJobDetail,
+  useUpdateApplication,
+} from "@/api/hooks";
+import type {
+  ApplicationStatus,
+  DocumentNeed,
+  ScoreComponent,
+} from "@/api/types";
 import { cn } from "@/lib/cn";
 import { CoverLetterPanel } from "./CoverLetterPanel";
 import { Button, ErrorBox, Spinner } from "./ui";
+
+const STATUSES: ApplicationStatus[] = [
+  "interested",
+  "preparing",
+  "applied",
+  "interview",
+  "offer",
+  "rejected",
+  "withdrawn",
+];
+
+function StatusControl({
+  jobId,
+  applicationId,
+  status,
+}: {
+  jobId: number;
+  applicationId: number | null;
+  status: ApplicationStatus | null;
+}) {
+  const create = useCreateApplication();
+  const update = useUpdateApplication();
+
+  const change = async (next: ApplicationStatus) => {
+    let id = applicationId;
+    if (id == null) {
+      const app = await create.mutateAsync(jobId);
+      id = app.id;
+    }
+    update.mutate({ id, patch: { status: next } });
+  };
+
+  return (
+    <label className="text-sm text-slate-600">
+      Status:{" "}
+      <select
+        className="rounded border border-slate-300 px-2 py-1 text-sm"
+        value={status ?? "interested"}
+        onChange={(e) => change(e.target.value as ApplicationStatus)}
+      >
+        {STATUSES.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
 
 function Bar({ name, c }: { name: string; c: ScoreComponent }) {
   const pct = Math.round(c.raw * 100);
@@ -67,7 +124,7 @@ export function JobDetailDrawer({
                     {d.weekly_hours && ` · ${d.weekly_hours}h/wk`}
                     {d.salary && ` · ${d.salary}`}
                   </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     <a href={d.apply_url ?? d.url} target="_blank" rel="noreferrer">
                       <Button>Open posting ↗</Button>
                     </a>
@@ -77,6 +134,11 @@ export function JobDetailDrawer({
                     >
                       {showCoverLetter ? "Hide cover letter" : "Prepare cover letter"}
                     </Button>
+                    <StatusControl
+                      jobId={d.id}
+                      applicationId={d.application_id}
+                      status={d.application_status}
+                    />
                   </div>
                 </div>
 

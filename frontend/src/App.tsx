@@ -5,9 +5,9 @@ import { Layout } from "@/components/Layout";
 import { Spinner } from "@/components/ui";
 import { OnboardingWizard } from "@/onboarding/Wizard";
 import { DashboardPage } from "@/pages/DashboardPage";
-import { PlaceholderPage } from "@/pages/Placeholder";
 import { RunsPage } from "@/pages/RunsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
+import { TrackerPage } from "@/pages/TrackerPage";
 
 function FullScreen({ children }: { children: React.ReactNode }) {
   return (
@@ -29,15 +29,7 @@ function AuthedApp() {
         <Route path="/" element={<DashboardPage />} />
         <Route path="/runs" element={<RunsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
-        <Route
-          path="/tracker"
-          element={
-            <PlaceholderPage
-              title="Tracker"
-              note="Application status board — arrives in CP20."
-            />
-          }
-        />
+        <Route path="/tracker" element={<TrackerPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

@@ -102,9 +102,11 @@ class JobDetail(JobCard):
     soft_breakdown: dict[str, ScoreComponent]
     documents_needed: list[DocumentNeed]
     analysis: dict[str, Any] | None
+    application_id: int | None = None
+    application_status: str | None = None
 
     @classmethod
-    def of_detail(cls, row: JobRow) -> JobDetail:
+    def of_detail(cls, row: JobRow, application: Any = None) -> JobDetail:
         base = JobCard.of(row).model_dump()
         score = row.score
         return cls(
@@ -117,4 +119,6 @@ class JobDetail(JobCard):
             soft_breakdown={k: ScoreComponent(**v) for k, v in score.soft_breakdown.items()},
             documents_needed=[DocumentNeed(**d) for d in score.documents_needed],
             analysis=row.analysis.raw_json if row.analysis else None,
+            application_id=application.id if application is not None else None,
+            application_status=(application.status.value if application is not None else None),
         )

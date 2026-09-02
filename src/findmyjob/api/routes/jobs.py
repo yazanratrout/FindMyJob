@@ -41,4 +41,6 @@ def get_job(job_id: int, session: Session = Depends(get_session)) -> JobDetail:
     row = get_job_row(session, job_id)
     if row is None:
         raise HTTPException(status_code=404, detail="job not found or not scored yet")
-    return JobDetail.of_detail(row)
+    from findmyjob.services.applications import application_for_job
+
+    return JobDetail.of_detail(row, application_for_job(session, job_id))

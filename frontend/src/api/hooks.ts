@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "./client";
 import type {
+  Application,
+  ApplicationStatus,
   AuthStatus,
   Costs,
   CoverLetter,
@@ -257,4 +259,50 @@ export function useRegenerateCoverLetter(jobId: number) {
 
 export function downloadCoverLetter(id: number) {
   return api.downloadFile(`/cover-letters/${id}/docx`);
+}
+
+// ---- applications --------------------------------------------
+export interface ApplicationPatch {
+  status?: ApplicationStatus;
+  applied_at?: string | null;
+  follow_up_at?: string | null;
+  outcome_note?: string;
+  documents_used?: string[];
+}
+
+export function useApplications() {
+  return useQuery({
+    queryKey: ["applications"],
+    queryFn: () => api.get<Application[]>("/applications"),
+  });
+}
+
+export function useFollowUps() {
+  return useQuery({
+    queryKey: ["follow-ups"],
+    queryFn: () => api.get<Application[]>("/applications/follow-ups"),
+  });
+}
+
+function invalidateApplications(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["applications"] });
+  qc.invalidateQueries({ queryKey: ["follow-ups"] });
+  qc.invalidateQueries({ queryKey: ["job"] });
+}
+
+export function useCreateApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (job_id: number) => api.post<Application>("/applications", { job_id }),
+    onSuccess: () => invalidateApplications(qc),
+  });
+}
+
+export function useUpdateApplication() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, patch }: { id: number; patch: ApplicationPatch }) =>
+      api.put<Application>(`/applications/${id}`, patch),
+    onSuccess: () => invalidateApplications(qc),
+  });
 }
