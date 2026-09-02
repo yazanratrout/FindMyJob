@@ -29,13 +29,14 @@ drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
 ## Status
 
-Early build — **Milestone 1 (foundation) complete (CP0–CP4).** Working today:
-configuration, database + migrations, the pipeline framework and orchestrator,
-the LLM client (cache + cost accounting), document upload + text extraction,
-LLM CV parsing into a structured profile, and the settings / onboarding backend
-(preferences, keyword suggestions, semester terms, geocoding). No web UI and no
-job sources yet — Milestone 2 (CP5–CP8) is next. See
-[`PROGRESS.md`](docs/implementation/PROGRESS.md).
+Early build — **Milestone 1 complete (CP0–CP4); Milestone 2 in progress (CP5
+done).** Working today: configuration, database + migrations, the pipeline
+framework and orchestrator, the LLM client (cache + cost accounting), document
+upload + text extraction, LLM CV parsing into a structured profile, the settings
+/ onboarding backend, and the **job-ingestion pipeline** — a `fetch` stage that
+queries Bundesagentur für Arbeit, Adzuna, Arbeitnow and The Muse and stores new
+postings. Next: ATS connectors (CP6), normalization/enrichment (CP7), dedup
+(CP8). No web UI yet. See [`PROGRESS.md`](docs/implementation/PROGRESS.md).
 
 ## Requirements
 

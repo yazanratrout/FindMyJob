@@ -51,21 +51,34 @@ wraps it. Add a pipeline here at the right position when its checkpoint lands.
 
 ## Concrete pipelines
 
-_None yet._ The registry returns an empty list; a run currently opens and closes
-a `Run` with no work. Pipelines are added from CP5 onward:
+Registered so far: **`fetch`** (CP5). The rest are added per checkpoint.
 
-| Pipeline | Module | CP | Critical | Purpose |
-|----------|--------|----|----------|---------|
-| `fetch` | `pipelines/fetch.py` | CP5 | yes | Query allowlisted sources → `RawJob`s → `job` rows |
-| `normalize` | `pipelines/normalize.py` | CP7 | no | Canonical shape, company resolution |
-| `enrich` | `pipelines/enrich.py` | CP7 | no | Fetch full JD (robots-aware), JSON-LD merge |
-| `dedup` | `pipelines/dedup.py` | CP8 | no | Exact / canonical-key / embedding dedup |
-| `prefilter` | `pipelines/prefilter.py` | CP10 | no | Deterministic hard filters before any LLM |
-| `analyze` | `pipelines/analyze.py` | CP9 | no | LLM structured extraction (cached) |
-| `score` | `pipelines/score.py` | CP10 | no | Deterministic soft score + weights |
-| `judge` | `pipelines/judge.py` | CP11 | no | LLM holistic fit, blend, decision |
-| `decide` | `pipelines/decide.py` | CP11 | no | Bucket + documents checklist |
-| `notify` | `pipelines/notify.py` | CP21 | no | Morning digest |
+| Pipeline | Module | CP | Critical | Status | Purpose |
+|----------|--------|----|----------|--------|---------|
+| `fetch` | `pipelines/fetch.py` | CP5 | yes | ✅ | Query allowlisted sources → `RawJob`s → `job` rows |
+| `normalize` | `pipelines/normalize.py` | CP7 | no | ⬜ | Canonical shape, company resolution |
+| `enrich` | `pipelines/enrich.py` | CP7 | no | ⬜ | Fetch full JD (robots-aware), JSON-LD merge |
+| `dedup` | `pipelines/dedup.py` | CP8 | no | ⬜ | Exact / canonical-key / embedding dedup |
+| `prefilter` | `pipelines/prefilter.py` | CP10 | no | ⬜ | Deterministic hard filters before any LLM |
+| `analyze` | `pipelines/analyze.py` | CP9 | no | ⬜ | LLM structured extraction (cached) |
+| `score` | `pipelines/score.py` | CP10 | no | ⬜ | Deterministic soft score + weights |
+| `judge` | `pipelines/judge.py` | CP11 | no | ⬜ | LLM holistic fit, blend, decision |
+| `decide` | `pipelines/decide.py` | CP11 | no | ⬜ | Bucket + documents checklist |
+| `notify` | `pipelines/notify.py` | CP21 | no | ⬜ | Morning digest |
 
-This table is updated as each pipeline is implemented, with a subsection
-describing its inputs, outputs, stats and failure modes.
+### `fetch` (CP5, critical)
+
+- **In:** `AppSettings` (via `build_source_query`) → a `SourceQuery`; every
+  source enabled in `sources_enabled` and configured (credentials present).
+- **Out:** new rows in `job` (idempotent upsert by `source_key` +
+  `source_job_id`); existing postings get `last_seen_at` bumped.
+- **Sources:** Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse
+  (`sources/api/`). Each is rate-limited and retried by the shared `HttpClient`.
+- **Stats:** `sources_active`, `found`, `new`, `found.<source>`.
+- **Failure:** a source that errors is recorded (`source:<key>`) and skipped;
+  a malformed posting is recorded (`job:<source>:<id>`) and skipped. The stage
+  returns `PARTIAL`, never aborts the run. Only an unexpected crash → `FAILED`
+  (and, being critical, that aborts the run).
+
+Later pipelines pick up from `job`: `normalize` resolves companies, `enrich`
+fills missing descriptions, `dedup` links duplicates.

@@ -4,13 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP4 — Milestone 1 complete
-**Resume from:** CP5 — Source framework + API connectors. Build
-`sources/base.py` (`JobSource` / `SourceQuery` / `RawJob`), `sources/registry.py`,
-the shared rate-limited HTTP client (`services/http.py`), and the connectors
-`sources/api/{ba,adzuna,arbeitnow,themuse}.py`. Add a `fetch` pipeline that
-turns `RawJob`s into `job` rows and register it in `pipelines/registry.py`.
-`respx`-mock every source in tests.
+**Last updated:** end of CP5
+**Resume from:** CP6 — ATS connectors + company registry. Add
+`sources/ats/{greenhouse,lever,personio,smartrecruiters,ashby}.py` (each fans
+out over `company` rows with a matching `ats_type`), a `sources/jsonld.py`
+`JobPosting` extractor for unknown-ATS career pages, and company CRUD endpoints
+(`GET/POST/DELETE /api/companies`, `POST /api/companies/detect`). Append the ATS
+sources to `ALL_SOURCE_CLASSES` in `sources/registry.py`. Honour `robots.txt`
+for any HTML fetch (add a small robots cache in `services/http.py` or a helper).
 
 ---
 
@@ -23,7 +24,7 @@ turns `RawJob`s into `job` rows and register it in `pipelines/registry.py`.
 | CP2 | Document intake & storage | ✅ done |
 | CP3 | Profile builder (LLM) | ✅ done |
 | CP4 | Settings & onboarding backend | ✅ done |
-| CP5 | Source framework + API connectors | ⬜ todo |
+| CP5 | Source framework + API connectors | ✅ done |
 | CP6 | ATS connectors + company registry | ⬜ todo |
 | CP7 | Normalization & enrichment | ⬜ todo |
 | CP8 | Deduplication | ⬜ todo |
@@ -45,7 +46,7 @@ turns `RawJob`s into `job` rows and register it in `pipelines/registry.py`.
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4)** almost complete · M2–M7 not started.
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) started** (CP5 done).
 
 ---
 
@@ -60,7 +61,11 @@ Milestones: **M1 (CP0–CP4)** almost complete · M2–M7 not started.
   cover_letter, eligibility_entry, app_auth.
 - **Pipeline framework** (`pipelines/`): `Pipeline`, `PipelineContext`,
   `PipelineResult`, `Orchestrator` (crash-isolated, timed, stat roll-up,
-  critical-abort). Registry is empty — no concrete pipelines yet.
+  critical-abort). Registered pipelines: `fetch` (CP5).
+- **Job sources** (`sources/`): shared rate-limited/retrying `HttpClient`;
+  `JobSource` contract; connectors for Bundesagentur für Arbeit, Adzuna,
+  Arbeitnow, The Muse; registry that filters by enabled + configured.
+  `fetch` pipeline persists new postings into `job` (idempotent).
 - **LLM layer** (`llm/`): `LlmClient` (tier routing, content-hash cache,
   cost/token accounting, JSON mode + one repair retry, injectable network fn),
   prompt loader, `profile_parser`.
@@ -72,7 +77,7 @@ Milestones: **M1 (CP0–CP4)** almost complete · M2–M7 not started.
   `/api/settings*`, `/api/semester-terms*`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: 51 passing. `ruff` + `mypy` clean.
+- **Tests**: 63 passing. `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 

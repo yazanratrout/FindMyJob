@@ -7,6 +7,7 @@ else needs to change — the orchestrator picks up whatever this returns.
 from __future__ import annotations
 
 from findmyjob.pipelines.base import Pipeline
+from findmyjob.pipelines.fetch import FetchPipeline
 from findmyjob.pipelines.orchestrator import Orchestrator
 
 
@@ -18,7 +19,9 @@ def default_pipelines() -> list[Pipeline]:
         -> prefilter (CP10) -> analyze (CP9) -> score (CP10) -> judge (CP11)
         -> decide (CP11) -> notify (CP21)
     """
-    return []
+    return [
+        FetchPipeline(),
+    ]
 
 
 def build_default_orchestrator() -> Orchestrator:

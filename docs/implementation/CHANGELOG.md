@@ -5,6 +5,26 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP5 — Source framework + API connectors
+- `services/http.HttpClient`: shared async client — per-host min-interval rate
+  limiting, retry/backoff on 429/5xx/transport errors (tenacity), stable UA.
+- `sources/base`: `JobSource` contract, `SourceQuery`, `RawJob`.
+- `sources/_parsing`: datetime/unix parsing, HTML→text, keyword & recency
+  filters.
+- Connectors (`sources/api/`): Bundesagentur für Arbeit (fixed public API key),
+  Adzuna (needs `ADZUNA_*`), Arbeitnow (keyless, client-side filter), The Muse
+  (optional key). Each maps to `RawJob`, paginates with a hard cap, translates
+  job types to the source's vocabulary.
+- `sources/registry`: `build_sources` (enabled + configured filter),
+  `build_source_query` (from `AppSettings`).
+- `services/jobs.store_raw_job`: idempotent upsert into `job` by
+  `(source_key, source_job_id)` with `normalized_title` + content hash.
+- `pipelines/fetch.FetchPipeline` (critical): queries every active source,
+  stores new postings, contains per-source and per-posting failures. Registered
+  in `pipelines/registry`.
+- 20 new tests (all sources `respx`-mocked; 63 total); ruff + mypy clean.
+- No new dependencies (tenacity/httpx/selectolax/python-dateutil already declared).
+
 ### Docs restructure
 - `docs/` split into `docs/implementation/` (plan, progress, changelog,
   architecture, pipelines, user guide) and `docs/rules/` (working agreement,
