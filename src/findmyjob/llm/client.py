@@ -92,6 +92,8 @@ class LlmClient:
         api_fn: ApiFn | None = None,
     ) -> None:
         self._settings = settings or get_settings()
+        #: offline stub mode — only when nobody injected a real/fake api_fn
+        self._offline = api_fn is None and self._settings.llm_offline
         self._api_fn = api_fn or _anthropic_call
 
     # ---- public API -------------------------------------------------
@@ -109,6 +111,21 @@ class LlmClient:
         use_cache: bool = True,
     ) -> LlmResult:
         model = self._model_for(tier)
+
+        if self._offline:
+            raw = _offline_completion(purpose)
+            self._record_call(purpose, model, raw.input_tokens, raw.output_tokens, run_id, cost=0.0)
+            log.info("llm.offline_stub", purpose=purpose.value)
+            return LlmResult(
+                text=raw.text,
+                model=f"offline/{model}",
+                tier=tier,
+                input_tokens=raw.input_tokens,
+                output_tokens=raw.output_tokens,
+                cost_eur=0.0,
+                cache_hit=False,
+            )
+
         key = self._cache_key(purpose, model, system, user)
 
         if use_cache and (cached := self._cache_get(key)) is not None:
@@ -279,6 +296,101 @@ class LlmClient:
                     error=error,
                 )
             )
+
+
+_OFFLINE_JSON: dict[LlmPurpose, dict[str, Any]] = {
+    LlmPurpose.PROFILE_PARSE: {
+        "full_name": "Offline Test User",
+        "email": "test@example.com",
+        "nationality": "German",
+        "university": "TU München",
+        "program": "M.Sc. Data Engineering",
+        "degree_level": "master",
+        "current_semester": 3,
+        "skills": [
+            {
+                "name": "Python",
+                "category": "technical",
+                "proficiency": 4,
+                "evidence": "offline stub",
+            },
+            {"name": "SQL", "category": "technical", "proficiency": 4, "evidence": "offline stub"},
+        ],
+        "languages": [
+            {"lang": "German", "cefr": "C2"},
+            {"lang": "English", "cefr": "C1"},
+        ],
+        "highlights_from_references": ["Reliable and quick to onboard (offline stub)."],
+    },
+    LlmPurpose.KEYWORD_SUGGEST: {
+        "core": ["Werkstudent Data", "Working Student Analytics", "Data Engineering"],
+        "adjacent": ["Business Intelligence", "Machine Learning"],
+        "tools": ["Python", "SQL", "dbt", "Airflow"],
+        "likely_noise": ["Senior", "Vollzeit", "Head of"],
+    },
+    LlmPurpose.ANALYZE: {
+        "must_haves": ["Enrolled student", "Python", "SQL"],
+        "nice_haves": ["dbt", "Cloud (AWS/GCP)"],
+        "skills": [
+            {"name": "Python", "required": True},
+            {"name": "SQL", "required": True},
+            {"name": "dbt", "required": False},
+        ],
+        "languages": [
+            {"lang": "German", "cefr": "B2", "required": False},
+            {"lang": "English", "cefr": "B2", "required": True},
+        ],
+        "weekly_hours": 20,
+        "weekly_hours_basis": "stated",
+        "contract_type": "werkstudent",
+        "enrollment_required": "yes",
+        "application_method": "ats_form",
+        "documents_requested": ["cv", "enrollment"],
+        "seniority": "student",
+        "red_flags": [],
+        "source_snippets": {
+            "weekly_hours": "20 hours per week during the semester (offline stub).",
+            "contract_type": "Werkstudentenstelle (offline stub).",
+        },
+    },
+    LlmPurpose.JUDGE: {
+        "holistic_fit": 68,
+        "rationale": "Offline stub judgement: solid overlap on core skills; "
+        "German level and exact tooling are the main open questions.",
+        "missing_qualifications": ["Hands-on dbt experience"],
+        "strengths_to_highlight": ["Python + SQL depth", "Current enrolment"],
+        "recommendation": "maybe",
+    },
+    LlmPurpose.COVER_LETTER: {
+        "language": "en",
+        "recipient": {"company": "The Company"},
+        "subject": "Application as Working Student - Offline Test User",
+        "salutation": "Dear Hiring Team,",
+        "paragraphs": [
+            "This letter was produced by FindMyJob's offline stub, so treat the wording "
+            "as a placeholder - the layout, editing and DOCX export are what it exercises.",
+            "My background in Python and SQL lines up with the core requirements in the "
+            "posting, and I am currently enrolled full-time.",
+            "I can offer around 20 hours per week during the semester and more during breaks, "
+            "and I am available to start immediately.",
+            "I would be glad to discuss how I can help - thank you for your time.",
+        ],
+        "closing": "Kind regards",
+        "claims_used": [
+            {"claim": "Python and SQL experience", "evidence_from_profile": "skills: Python, SQL"},
+            {
+                "claim": "Currently enrolled",
+                "evidence_from_profile": "M.Sc. Data Engineering, sem 3",
+            },
+        ],
+    },
+}
+
+
+def _offline_completion(purpose: LlmPurpose) -> RawCompletion:
+    payload = _OFFLINE_JSON.get(purpose, {})
+    text = json.dumps(payload, ensure_ascii=False)
+    return RawCompletion(text=text, input_tokens=0, output_tokens=0)
 
 
 def _loads(text: str) -> Any:

@@ -57,6 +57,15 @@ you through it:
 
 Everything is saved between sessions and re-editable later from **Settings**.
 
+### Trying it without an Anthropic key
+
+Set `LLM_OFFLINE=true` in `.env` to click through the whole app with **no API
+key and zero cost**: CV parsing, keyword suggestions, job analysis, the judge and
+cover-letter generation all return canned, schema-valid placeholder data. It
+proves the plumbing (scoring, buckets, the DOCX export, the tracker) works
+end to end. The text is obviously fake - swap in a real
+`ANTHROPIC_API_KEY` (and set `LLM_OFFLINE=false`) for actual results.
+
 ## Daily use
 
 - Open the dashboard each morning. New recommendations are badged; the

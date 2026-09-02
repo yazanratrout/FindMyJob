@@ -84,7 +84,10 @@ def _migrations() -> Check:
 
 
 def _anthropic_key() -> Check:
-    key = get_settings().anthropic_api_key
+    settings = get_settings()
+    if settings.llm_offline:
+        return Check("ANTHROPIC_API_KEY set", True, "LLM_OFFLINE=true - using canned responses")
+    key = settings.anthropic_api_key
     return Check("ANTHROPIC_API_KEY set", bool(key), "required for analysis + cover letters")
 
 

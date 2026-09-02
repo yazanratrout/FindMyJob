@@ -28,6 +28,37 @@ def test_complete_records_call_and_cost():
         assert call.cache_hit is False
 
 
+def test_offline_mode_returns_canned_schema_valid_json(monkeypatch):
+    from findmyjob.config import get_settings
+    from findmyjob.llm.analyzer import JobAnalysisResult
+    from findmyjob.llm.judge import JudgeResult
+
+    monkeypatch.setattr(get_settings(), "llm_offline", True)
+    client = LlmClient()  # no api_fn -> offline stub
+
+    analysis, res = client.complete_json(
+        purpose=LlmPurpose.ANALYZE, system="s", user="u", schema=JobAnalysisResult
+    )
+    assert res.cost_eur == 0.0 and res.model.startswith("offline/")
+    assert analysis.contract_type == "werkstudent" and analysis.weekly_hours == 20
+
+    judged, _ = client.complete_json(
+        purpose=LlmPurpose.JUDGE, system="s", user="u", schema=JudgeResult, tier="smart"
+    )
+    assert 0 <= judged.holistic_fit <= 100
+
+    with Session(get_engine()) as s:
+        assert all(c.cost_eur == 0.0 for c in s.exec(select(LlmCall)).all())
+
+
+def test_injected_api_fn_overrides_offline(monkeypatch):
+    from findmyjob.config import get_settings
+
+    monkeypatch.setattr(get_settings(), "llm_offline", True)
+    client = LlmClient(api_fn=scripted_api_fn("real", in_tokens=10, out_tokens=5))
+    assert client.complete(purpose=LlmPurpose.ANALYZE, system="s", user="u").text == "real"
+
+
 def test_identical_prompt_is_served_from_cache():
     client = LlmClient(api_fn=scripted_api_fn("once", in_tokens=500, out_tokens=100))
     first = client.complete(purpose=LlmPurpose.ANALYZE, system="s", user="u")

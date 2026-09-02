@@ -5,6 +5,15 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### `LLM_OFFLINE` stub mode
+- `LlmClient` honours `LLM_OFFLINE=true` (env): every `complete` / `complete_json`
+  returns canned, schema-valid JSON per `LlmPurpose` instead of calling Anthropic
+  — cost 0, still logged to `llm_call`. An injected `api_fn` (tests) always wins.
+- Lets you click through onboarding parse, keyword suggest, analyze, judge and
+  cover-letter generation with no API key. `doctor` treats the key check as
+  satisfied when offline. `.env.example` + USER_GUIDE document it.
+- 2 new tests.
+
 ### Spec-conformance pass (post-CP25 audit)
 A sweep of every checkpoint against the plan closed the remaining gaps:
 - **Repost rule (CP8)** — `store_raw_job` now detects a posting last seen more

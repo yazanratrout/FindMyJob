@@ -67,6 +67,10 @@ Open the URL, set a passphrase, and the onboarding wizard walks you through
 documents, profile, preferences and schedule. For a fallback daily run even when
 the server is down, `just install-launchd` (see **Scheduling**).
 
+**No Anthropic key yet?** Set `LLM_OFFLINE=true` in `.env` to exercise the whole
+app (analysis, scoring, cover letters) with canned placeholder responses at zero
+cost. Swap in a real `ANTHROPIC_API_KEY` for actual output.
+
 Without `just`:
 
 ```bash
