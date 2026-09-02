@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ApiError } from "@/api/client";
 import { useSettings, useUpdateSettings } from "@/api/hooks";
 import type { SettingsUpdate } from "@/api/types";
+import { CalibrationPanel } from "@/components/CalibrationPanel";
 import { Button, Card, ErrorBox, Spinner } from "@/components/ui";
 import { STEPS, pickUpdatable } from "@/onboarding/steps";
 
@@ -37,6 +38,8 @@ export function SettingsPage() {
           </Card>
         );
       })}
+
+      <CalibrationPanel />
     </div>
   );
 }

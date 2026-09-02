@@ -5,6 +5,24 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP25 — Calibration & feedback loop
+- `job_feedback` table (one row per job: `verdict` up/down, `note`) + migration
+  `4a07427937c2`; `services/feedback` upsert/clear helpers.
+- `services/calibration`: labels each scored job from an explicit thumbs
+  up/down (wins) or its tracker status (`applied`/`interview`/`offer` positive,
+  `rejected`/`withdrawn` negative), Pearson-correlates every soft-score
+  component with the outcome, and proposes a renormalised weight set
+  (`weight * (1 + 0.6 * corr)`, clamped, summing to 100). The judge score is
+  correlated too and nudges `blend_soft_ratio`. Needs ≥ 8 labelled jobs with
+  ≥ 2 of each class before it will suggest anything.
+- API: `PUT` / `DELETE /api/jobs/{id}/feedback`, `feedback` on the job detail,
+  `GET /api/calibration`, `POST /api/calibration/apply` (writes `settings`).
+- CLI: `findmyjob calibrate [--apply]`.
+- Frontend: 👍/👎 control in the job drawer; a **Score calibration** panel in
+  Settings (per-component correlation table + one-click apply).
+- 12 new backend tests; ruff + mypy clean; `vite build` clean. No new deps
+  (`numpy` already required by dedup).
+
 ### CP24 — Packaging & macOS deployment
 - `findmyjob doctor` rewritten: Python/Node, `.env`, data dir, DB, **migrations
   at head**, `ANTHROPIC_API_KEY`, **web UI built**, **embedding model cached**,

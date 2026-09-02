@@ -1,12 +1,15 @@
 import { useState } from "react";
 import {
+  useClearJobFeedback,
   useCreateApplication,
   useJobDetail,
+  useSetJobFeedback,
   useUpdateApplication,
 } from "@/api/hooks";
 import type {
   ApplicationStatus,
   DocumentNeed,
+  FeedbackVerdict,
   ScoreComponent,
 } from "@/api/types";
 import { cn } from "@/lib/cn";
@@ -59,6 +62,43 @@ function StatusControl({
         ))}
       </select>
     </label>
+  );
+}
+
+function FeedbackControl({
+  jobId,
+  current,
+}: {
+  jobId: number;
+  current: FeedbackVerdict | null;
+}) {
+  const set = useSetJobFeedback(jobId);
+  const clear = useClearJobFeedback(jobId);
+  const busy = set.isPending || clear.isPending;
+
+  const click = (verdict: FeedbackVerdict) => {
+    if (current === verdict) clear.mutate();
+    else set.mutate(verdict);
+  };
+
+  return (
+    <span className="inline-flex items-center gap-1" title="Teach the scorer what you like">
+      {(["up", "down"] as FeedbackVerdict[]).map((v) => (
+        <button
+          key={v}
+          disabled={busy}
+          onClick={() => click(v)}
+          className={cn(
+            "rounded border px-2 py-1 text-sm transition-colors disabled:opacity-40",
+            current === v
+              ? "border-slate-900 bg-slate-900 text-white"
+              : "border-slate-300 text-slate-500 hover:bg-slate-100",
+          )}
+        >
+          {v === "up" ? "👍" : "👎"}
+        </button>
+      ))}
+    </span>
   );
 }
 
@@ -139,6 +179,7 @@ export function JobDetailDrawer({
                       applicationId={d.application_id}
                       status={d.application_status}
                     />
+                    <FeedbackControl jobId={d.id} current={d.feedback} />
                   </div>
                 </div>
 

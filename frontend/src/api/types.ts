@@ -331,4 +331,28 @@ export interface JobDetail extends JobCard {
   analysis: Record<string, unknown> | null;
   application_id: number | null;
   application_status: ApplicationStatus | null;
+  feedback: "up" | "down" | null;
+}
+
+export type FeedbackVerdict = "up" | "down";
+
+export interface ComponentReport {
+  name: string;
+  correlation: number;
+  current_weight: number;
+  suggested_weight: number;
+}
+
+export interface CalibrationReport {
+  ready: boolean;
+  reason: string;
+  n_labeled: number;
+  n_positive: number;
+  n_negative: number;
+  min_labeled: number;
+  components: ComponentReport[];
+  judge_correlation: number | null;
+  current_blend_soft_ratio: number;
+  suggested_blend_soft_ratio: number;
+  suggested_weights: Record<string, number>;
 }

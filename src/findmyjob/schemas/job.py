@@ -104,9 +104,12 @@ class JobDetail(JobCard):
     analysis: dict[str, Any] | None
     application_id: int | None = None
     application_status: str | None = None
+    feedback: str | None = None
 
     @classmethod
-    def of_detail(cls, row: JobRow, application: Any = None) -> JobDetail:
+    def of_detail(
+        cls, row: JobRow, application: Any = None, *, feedback: str | None = None
+    ) -> JobDetail:
         base = JobCard.of(row).model_dump()
         score = row.score
         return cls(
@@ -121,4 +124,5 @@ class JobDetail(JobCard):
             analysis=row.analysis.raw_json if row.analysis else None,
             application_id=application.id if application is not None else None,
             application_status=(application.status.value if application is not None else None),
+            feedback=feedback,
         )

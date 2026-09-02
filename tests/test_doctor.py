@@ -21,9 +21,7 @@ def test_models_fetch_ok(monkeypatch, capsys):
         model_version = "fake"
         dim = 4
 
-    monkeypatch.setattr(
-        "findmyjob.services.embeddings.get_embedder", lambda: FakeEmbedder()
-    )
+    monkeypatch.setattr("findmyjob.services.embeddings.get_embedder", lambda: FakeEmbedder())
     assert cmd_models_fetch(argparse.Namespace()) == 0
     assert "ready" in capsys.readouterr().out
 

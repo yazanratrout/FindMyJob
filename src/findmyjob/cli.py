@@ -125,6 +125,40 @@ def cmd_models_fetch(_args: argparse.Namespace) -> int:
     return 0
 
 
+# --------------------------------------------------------------------- calibrate
+def cmd_calibrate(args: argparse.Namespace) -> int:
+    from findmyjob.db import session_scope
+    from findmyjob.services.calibration import apply_report, build_report
+
+    with session_scope() as session:
+        report = build_report(session)
+        print(
+            f"Labelled jobs: {report.n_labeled} "
+            f"({report.n_positive} positive / {report.n_negative} negative)"
+        )
+        if not report.ready:
+            print(report.reason)
+            return 0
+        print(f"\n{'component':<18}{'corr':>8}{'weight':>10}{'suggested':>12}")
+        for c in report.components:
+            print(
+                f"{c.name:<18}{c.correlation:>8.2f}"
+                f"{c.current_weight:>10.1f}{c.suggested_weight:>12.1f}"
+            )
+        if report.judge_correlation is not None:
+            print(f"\njudge score correlation: {report.judge_correlation:.2f}")
+        print(
+            f"blend_soft_ratio: {report.current_blend_soft_ratio} "
+            f"-> {report.suggested_blend_soft_ratio}"
+        )
+        if args.apply:
+            apply_report(session)
+            print("\nApplied suggested weights to settings.")
+        else:
+            print("\nRe-run with --apply to write these weights to settings.")
+    return 0
+
+
 # ------------------------------------------------------------------------ doctor
 def cmd_doctor(_args: argparse.Namespace) -> int:
     from findmyjob.services.doctor import run_doctor
@@ -193,6 +227,10 @@ def build_parser() -> argparse.ArgumentParser:
     models.add_parser("fetch", help="download the embedding model now").set_defaults(
         func=cmd_models_fetch
     )
+
+    calibrate = sub.add_parser("calibrate", help="suggest score weights from your feedback")
+    calibrate.add_argument("--apply", action="store_true", help="write the suggested weights")
+    calibrate.set_defaults(func=cmd_calibrate)
 
     sub.add_parser("doctor", help="check the installation").set_defaults(func=cmd_doctor)
     sub.add_parser("shell", help="interactive Python shell").set_defaults(func=cmd_shell)

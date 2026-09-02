@@ -38,44 +38,58 @@ just dev            # starts the app on http://127.0.0.1:8000
 
 No `just`? See the commands in the top-level `README.md`.
 
-## First-time setup _(onboarding wizard: coming in CP16)_
+## First-time setup
 
-Until the UI lands, use the API (`http://127.0.0.1:8000/api/docs`):
+Open `http://127.0.0.1:8000`, set a passphrase, and the onboarding wizard walks
+you through it:
 
-1. **Upload documents** — `POST /api/documents` with `type` = `cv` /
-   `enrollment` / `transcript` / `reference` and the file. CV is required.
-2. **Parse your CV** — `POST /api/profile/parse`. This reads your documents and
-   fills in a structured profile (name, university, enrollment dates, skills,
-   languages).
-3. **Review the profile** — `GET /api/profile`, correct anything with
-   `PUT /api/profile`. Fields you edit are "locked" and a later re-parse won't
-   overwrite them. Set `voice_sample_text` to a cover letter you wrote yourself
-   — it makes generated letters sound like you.
-4. **Set preferences** — `PUT /api/settings`: city, radius, target fields and
-   job titles, keyword allow/block lists, weekly-hours limit (and whether it's
-   a hard limit), language level, score threshold, run time, notification
-   channel. _(keyword suggestions: coming in CP4; full editor: CP16)_
+1. **Upload documents** — CV (required), plus optionally enrollment
+   certificate, transcript and reference letters.
+2. **Parse your CV** — the wizard reads your documents and fills in a structured
+   profile (name, university, enrollment dates, skills, languages).
+3. **Review the profile** — correct anything; fields you edit are "locked" and a
+   later re-parse won't overwrite them. Set the voice sample to a cover letter
+   you wrote yourself — it makes generated letters sound like you.
+4. **Set preferences** — city, radius, target fields and job titles (with LLM
+   keyword suggestions), keyword allow/block lists, weekly-hours limit (and
+   whether it's a hard limit), language level, score thresholds and weights,
+   daily run time, sources, and the optional eligibility module.
 
-Everything is saved between sessions.
+Everything is saved between sessions and re-editable later from **Settings**.
 
-## Daily use _(coming in CP17–CP19)_
+## Daily use
 
-- Open the dashboard each morning. New recommendations are badged.
+- Open the dashboard each morning. New recommendations are badged; the
+  **Activity** tab shows a digest per run.
 - Click a job to see the match breakdown ("why this score"), the extracted
   requirements, the original description, the apply link, and which of your
   documents it needs.
+- Give the recommendation a 👍 or 👎 in the drawer. That, plus how far you take
+  each application in the tracker, feeds the calibration panel.
 - If you like it after reading it yourself, click **Prepare cover letter**.
   Review the draft (every claim is traced back to something in your profile),
   edit inline, then **Download** `Cover letter <Company>.docx`.
 - Track status per job: interested → applied → interview → outcome.
+
+## Tuning the score
+
+Once you have rated about eight jobs (👍/👎 or advanced in the tracker), open
+**Settings → Score calibration**. It shows how strongly each score component
+correlated with the jobs you liked and proposes an adjusted weight set. Click
+**Apply suggested weights** to use them for future rankings, or run
+`just calibrate` / `just calibrate --apply` from the terminal. Nothing changes
+until you apply it, and you can always re-edit the weights by hand in Settings.
 
 ## Running the pipeline manually
 
 ```bash
 just run-pipeline            # run the whole daily job now
 findmyjob pipeline list      # show the configured stages
-findmyjob runs show <id>     # inspect a run  (coming with CP12/CP23)
+findmyjob calibrate          # suggested score weights from your feedback
 ```
+
+Inspect past runs from the **Runs** tab in the web UI (per-stage status,
+timing, LLM usage, errors).
 
 ## Where your data lives
 

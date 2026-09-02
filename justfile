@@ -117,6 +117,10 @@ backup:
 prune:
     {{py}} -m findmyjob maintenance prune
 
+# Suggest score weights from your feedback (pass --apply to write them).
+calibrate *ARGS:
+    {{py}} -m findmyjob calibrate {{ARGS}}
+
 # ---- macOS deployment ------------------------------------------------
 
 # Install the launchd daily-fallback job (add `--server` to also keep the API up).

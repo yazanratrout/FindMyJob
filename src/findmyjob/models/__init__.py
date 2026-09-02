@@ -17,6 +17,7 @@ from findmyjob.models.config import (
 )
 from findmyjob.models.digest import Digest
 from findmyjob.models.eligibility import EligibilityEntry
+from findmyjob.models.feedback import JobFeedback
 from findmyjob.models.geo import GeocodeCache
 from findmyjob.models.job import Job, JobAnalysis, JobEmbedding, JobScore
 from findmyjob.models.llm_cache import LlmCacheEntry
@@ -38,6 +39,7 @@ __all__ = [
     "Job",
     "JobAnalysis",
     "JobEmbedding",
+    "JobFeedback",
     "JobScore",
     "LlmCacheEntry",
     "LlmCall",

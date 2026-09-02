@@ -4,14 +4,10 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP24
-**Resume from:** CP25 — Calibration & feedback loop. Add a `job_feedback` table
-(job_id, verdict thumbs_up/down, note) + migration; `POST /api/jobs/{id}/feedback`;
-`services/calibration` — correlate each soft-score component (and the judge
-score) with positive outcomes (feedback + application status transitions),
-propose a weight set; `GET /api/calibration` + `POST /api/calibration/apply`
-(writes `settings.weights`); `findmyjob calibrate`. Frontend: thumbs on job
-cards/drawer + a calibration panel in Settings.
+**Last updated:** end of CP25 — **all 25 checkpoints complete.**
+**Resume from:** nothing outstanding. The build is done: Milestones 1-7 all
+shipped. Future work is maintenance / the deferred items below (frontend tests,
+OCR fallback, the repost rule, an optional logistic re-ranker at ≥ 40 labels).
 
 ---
 
@@ -44,9 +40,9 @@ cards/drawer + a calibration panel in Settings.
 | CP22 | Eligibility module | ✅ done |
 | CP23 | Observability, retention, backup | ✅ done |
 | CP24 | Packaging & macOS deployment | ✅ done |
-| CP25 | Calibration & feedback loop | ⬜ todo |
+| CP25 | Calibration & feedback loop | ✅ done |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) complete**.
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) complete** · **M7 (CP25) complete**.
 
 ---
 
@@ -98,27 +94,25 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
   job-detail drawer, application tracker, Activity (digests + badge), Eligibility
   (conditional), **Runs list + run-detail drawer**.
 - **CLI**: `findmyjob db …`, `pipeline run|list`, `schedule status`,
-  `maintenance backup|prune`, `models fetch`, `doctor` (11 checks), `shell`.
+  `maintenance backup|prune`, `models fetch`, `calibrate [--apply]`,
+  `doctor` (11 checks), `shell`.
 - **Maintenance**: nightly SQLite backup + weekly retention prune, scheduled and
   as CLI (`services/backup`, `services/retention`).
-- **Tests**: ~195 passing (backend; `just test` ~128 fast, `just test-all` all) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Calibration** (`services/feedback`, `services/calibration`, `/api/calibration`,
+  `/api/jobs/{id}/feedback`): thumbs up/down + tracker outcomes → per-component
+  correlations → one-click weight adjustment. Settings panel + drawer control.
+- **Tests**: ~207 passing (backend; `just test` fast subset, `just test-all` all).
+  `ruff` + `mypy` clean; `vite build` clean.
 
 ## Known gaps / deferred
 
-- No web UI yet (CP15+).
-- No macOS packaging polish yet (CP24); no calibration loop (CP25).
 - No frontend tests yet.
-- No application tracker / eligibility module / notifications yet (CP20-CP22).
-- Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
-  accounting exists.
 - Image/scanned-PDF documents are stored but not OCR'd (CP3 vision fallback
   deferred; `parse_status = PENDING`).
-- `dedup` embedding model downloads on first real run; tests inject a fake.
-  Consider adding the download to `just setup` (CP24).
 - The repost rule (a long-gone posting reappearing counts as new) is not yet
-  implemented — `dedup` currently always links by canonical key.
-- Full test suite ~7 min (trafilatura import + per-test DB reset); split fast/slow
-  in CP23.
+  implemented - `dedup` currently always links by canonical key.
+- Calibration is correlation-based only; the optional per-user logistic
+  re-ranker at ≥ 40 labelled jobs (CP25 stretch goal) is not built.
 
 ## How to resume
 

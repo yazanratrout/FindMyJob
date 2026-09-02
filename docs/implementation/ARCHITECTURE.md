@@ -63,7 +63,8 @@ src/findmyjob/
     base.py            JobSource / SourceQuery / RawJob (CP5)
     companies.yaml     seed employer registry
     api/  ats/          connectors (CP5 / CP6)
-  services/            documents, profile, settings, geocode, bootstrap, doctor
+  services/            documents, profile, settings, geocode, bootstrap, doctor,
+                       feedback, calibration, retention, backup, digest, ...
 migrations/            Alembic env + versions
 tests/                 pytest; conftest gives each test an isolated DB
 data/                  git-ignored runtime: findmyjob.db, documents/, letters/, models/, logs/, backups/
@@ -85,6 +86,7 @@ frontend/             React UI (CP15+)
 - **Application**: `application` (status tracker), `cover_letter` (generated
   drafts + claims-used + docx path).
 - **Eligibility**: `eligibility_entry` (non-EU working-day ledger).
+- **Feedback**: `job_feedback` (one thumbs up/down per job, feeds calibration).
 - **Auth**: `app_auth` (Argon2 passphrase hash).
 
 ## Request/pipeline flow

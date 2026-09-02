@@ -29,23 +29,22 @@ drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
 ## Status
 
-**Milestones 1–5 complete + CP21 (CP0–CP21): the app is end-to-end usable.** The
-backend runs the full pipeline on a schedule within an LLM budget; the React app
-has passphrase auth, an onboarding wizard, a re-editable settings page, a ranked
-job dashboard with a detail drawer (score breakdown, assessment, documents
-checklist, original posting), **LLM cover-letter generation → editable → `.docx`
-download**, an **application tracker** board, and a per-run **Activity feed**
-(in-app only — no email/Telegram). Remaining: the eligibility module,
-observability, and macOS packaging (CP22–24). `findmyjob pipeline run` (or
-`POST /api/runs`, or the daily scheduler) executes:
-`fetch` (Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse + the public ATS
-boards of curated employers) → `normalize` → `enrich` (robots-aware) → `dedup`
-(canonical-key + local embeddings) → `prefilter` (cheap hard filters) →
-`analyze` (LLM extraction) → `score` (hard checks + weighted soft score) →
-`judge` (LLM holistic fit, blended) → `decide` (documents checklist). Plus the
-config / profile / company / settings / runs / costs REST API, an in-process
-daily scheduler, and a monthly LLM-budget guard. **Next: the React web UI
-(CP15+).** No UI yet — use the API at `/api/docs`. See
+**All 25 checkpoints complete (Milestones 1–7).** The backend runs the full
+pipeline on a schedule within an LLM budget; the React app has passphrase auth,
+an onboarding wizard, a re-editable settings page, a ranked job dashboard with a
+detail drawer (score breakdown, assessment, documents checklist, original
+posting, 👍/👎 feedback), **LLM cover-letter generation → editable → `.docx`
+download**, an **application tracker** board, a per-run **Activity feed** (in-app
+only — no email/Telegram), an optional **eligibility** ledger, a **Runs**
+inspector, and a **score-calibration** panel that tunes the weights from your
+feedback. `findmyjob pipeline run` (or `POST /api/runs`, or the daily scheduler)
+executes: `fetch` (Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse + the
+public ATS boards of curated employers) → `normalize` → `enrich` (robots-aware)
+→ `dedup` (canonical-key + local embeddings) → `prefilter` (cheap hard filters)
+→ `analyze` (LLM extraction) → `score` (hard checks + weighted soft score) →
+`judge` (LLM holistic fit, blended) → `decide` (documents checklist) → `notify`
+(in-app digest). Observability, retention/backup and macOS packaging
+(`just setup`, `launchd` fallback) round it out. See
 [`PROGRESS.md`](docs/implementation/PROGRESS.md).
 
 ## Requirements
@@ -93,6 +92,7 @@ All code and tooling run **inside `./.venv`**. Secrets live only in `.env`
 | `just test-all` | `pytest` | the whole suite incl. slow integration tests |
 | `just check` | ruff + mypy + `test-all` | full quality gate (run before committing) |
 | `just backup` / `just prune` | `findmyjob maintenance …` | one-off SQLite backup / retention prune |
+| `just calibrate` | `.venv/bin/python -m findmyjob calibrate` | show suggested score weights (`--apply` to write them) |
 | `just doctor` | `.venv/bin/python -m findmyjob doctor` | verify the installation |
 | `just db-upgrade` | `.venv/bin/python -m findmyjob db upgrade` | apply migrations |
 | `just db-revision "msg"` | `.venv/bin/python -m alembic revision --autogenerate -m msg` | new migration after a model change |

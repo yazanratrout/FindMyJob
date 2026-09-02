@@ -4,6 +4,7 @@ import type {
   Application,
   ApplicationStatus,
   AuthStatus,
+  CalibrationReport,
   Costs,
   CoverLetter,
   CoverLetterContent,
@@ -12,6 +13,7 @@ import type {
   DocumentType,
   EligibilityEntry,
   EligibilityGauge,
+  FeedbackVerdict,
   Health,
   JobDetail,
   JobList,
@@ -235,6 +237,51 @@ export function useJobDetail(id: number | null) {
     queryKey: ["job", id],
     queryFn: () => api.get<JobDetail>(`/jobs/${id}`),
     enabled: id != null,
+  });
+}
+
+export function useSetJobFeedback(jobId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (verdict: FeedbackVerdict) =>
+      api.put<{ job_id: number; verdict: string; note: string }>(
+        `/jobs/${jobId}/feedback`,
+        { verdict },
+      ),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", jobId] });
+      qc.invalidateQueries({ queryKey: ["calibration"] });
+    },
+  });
+}
+
+export function useClearJobFeedback(jobId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.del<void>(`/jobs/${jobId}/feedback`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["job", jobId] });
+      qc.invalidateQueries({ queryKey: ["calibration"] });
+    },
+  });
+}
+
+// ---- calibration ---------------------------------------------
+export function useCalibration() {
+  return useQuery({
+    queryKey: ["calibration"],
+    queryFn: () => api.get<CalibrationReport>("/calibration"),
+  });
+}
+
+export function useApplyCalibration() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<CalibrationReport>("/calibration/apply"),
+    onSuccess: (data) => {
+      qc.setQueryData(["calibration"], data);
+      qc.invalidateQueries({ queryKey: keys.settings });
+    },
   });
 }
 
