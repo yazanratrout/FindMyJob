@@ -51,7 +51,8 @@ wraps it. Add a pipeline here at the right position when its checkpoint lands.
 
 ## Concrete pipelines
 
-Registered so far: **`fetch`** (CP5). The rest are added per checkpoint.
+Registered: `fetch` → `normalize` → `enrich` → `dedup` → `prefilter` →
+`analyze` → `score`. `judge` / `decide` / `notify` land in later checkpoints.
 
 | Pipeline | Module | CP | Critical | Status | Purpose |
 |----------|--------|----|----------|--------|---------|
@@ -59,9 +60,9 @@ Registered so far: **`fetch`** (CP5). The rest are added per checkpoint.
 | `normalize` | `pipelines/normalize.py` | CP7 | no | ✅ | Company resolution, title/remote tidy-up |
 | `enrich` | `pipelines/enrich.py` | CP7 | no | ✅ | Fetch full JD (robots-aware), JSON-LD merge |
 | `dedup` | `pipelines/dedup.py` | CP8 | no | ✅ | Canonical-key + embedding dedup |
-| `prefilter` | `pipelines/prefilter.py` | CP10 | no | ⬜ | Deterministic hard filters before any LLM |
+| `prefilter` | `pipelines/prefilter.py` | CP10 | no | ✅ | Cheap deterministic hard filters |
 | `analyze` | `pipelines/analyze.py` | CP9 | no | ✅ | LLM structured extraction (cached) |
-| `score` | `pipelines/score.py` | CP10 | no | ⬜ | Deterministic soft score + weights |
+| `score` | `pipelines/score.py` | CP10 | no | ✅ | Analysis hard checks + weighted soft score |
 | `judge` | `pipelines/judge.py` | CP11 | no | ⬜ | LLM holistic fit, blend, decision |
 | `decide` | `pipelines/decide.py` | CP11 | no | ⬜ | Bucket + documents checklist |
 | `notify` | `pipelines/notify.py` | CP21 | no | ⬜ | Morning digest |
@@ -133,5 +134,22 @@ Downstream pipelines (CP9+) only consider **canonical** jobs
   the same posting seen on two sources costs one call.
 - **Stats:** `analyzed`, `cache_hits`, `already_analyzed`, `skipped_thin_text`.
 - `AnalyzePipeline(client_factory=…)` is injectable for tests.
-- Runs *after* `prefilter` (CP10) in the final sequence so rejects never reach
-  the model; currently registered right after `dedup`.
+- Runs *after* `prefilter` so deterministic rejects never reach the model.
+
+### `prefilter` (CP10)
+
+- **In:** canonical active jobs. **Out:** a per-run `JobScore` with
+  `hard_pass` + `hard_failures` (recency, `blacklist:<kw>`, `location`);
+  failures also set `decision=archived`. `analyze` skips these jobs.
+
+### `score` (CP10)
+
+- **In:** this run's `JobScore` rows that passed `prefilter` and now have a
+  current `JobAnalysis`.
+- **Out:** analysis hard checks may flip `hard_pass` off (`hours`,
+  `language:<lang>`, `contract_type`, `job_type`); otherwise `soft_score` +
+  `soft_breakdown` (8 components, each raw/weight/contribution), a provisional
+  `final_score = soft_score` and `decision` via `bucket()`. `judge` (CP11)
+  blends in the LLM holistic score.
+- **Stats:** `scored`, `hard_failed_analysis`, `no_analysis`,
+  `decision.<bucket>`.

@@ -5,6 +5,24 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP10 — Scoring engine
+- `services/scoring` (pure functions): `cheap_hard_checks` (recency, blocked
+  keywords, location — EN/DE city aliases), `analysis_hard_checks` (hours /
+  language / contract, each gated by its hard toggle; full-time always fails
+  `job_type`), `compute_soft_score` (skills_match, field_relevance, language_fit,
+  hours_fit, seniority_fit, recency, salary_fit, company_affinity — weights from
+  `AppSettings.weights`; breakdown records raw/weight/contribution), `bucket`.
+- `services/jobscore`: per-run `JobScore` upsert + profile facts
+  (`profile_skill_names`, `profile_language_levels`, `company_affinity`).
+- `pipelines/prefilter` (before `analyze`): cheap hard filters → `JobScore`
+  with `hard_pass`/`hard_failures`; `analyze` now skips prefilter rejects.
+- `pipelines/score` (after `analyze`): analysis hard checks, then soft score +
+  provisional `final_score`/`decision` (judge blend comes in CP11).
+- `normalize`: shared `city_tokens` / `location_mentions_city` (ATS connectors
+  now reuse them).
+- Sequence: fetch → normalize → enrich → dedup → prefilter → analyze → score.
+- 17 new tests (117 total); ruff + mypy clean. No new dependencies.
+
 ### CP9 — LLM job analyzer
 - `llm/analyzer`: `analyze_posting()` + prompt + `JobAnalysisResult` schema
   (must/nice haves, skills, languages+CEFR, weekly hours + basis, contract type,

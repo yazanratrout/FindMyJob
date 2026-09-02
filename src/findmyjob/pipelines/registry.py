@@ -13,6 +13,8 @@ from findmyjob.pipelines.enrich import EnrichPipeline
 from findmyjob.pipelines.fetch import FetchPipeline
 from findmyjob.pipelines.normalize import NormalizePipeline
 from findmyjob.pipelines.orchestrator import Orchestrator
+from findmyjob.pipelines.prefilter import PrefilterPipeline
+from findmyjob.pipelines.score import ScorePipeline
 
 
 def default_pipelines() -> list[Pipeline]:
@@ -28,7 +30,9 @@ def default_pipelines() -> list[Pipeline]:
         NormalizePipeline(),
         EnrichPipeline(),
         DedupPipeline(),
+        PrefilterPipeline(),
         AnalyzePipeline(),
+        ScorePipeline(),
     ]
 
 

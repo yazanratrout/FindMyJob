@@ -66,3 +66,31 @@ def normalize_title(title: str) -> str:
 
 def slugify(text: str) -> str:
     return _NON_ALNUM.sub("-", fold_accents(text).lower()).strip("-")
+
+
+# Common EN/DE spellings for cities, so an English posting isn't dropped by a
+# German target city (and vice versa).
+_CITY_ALIASES: dict[str, set[str]] = {
+    "muenchen": {"munich", "muenchen", "munchen"},
+    "koeln": {"cologne", "koeln", "koln"},
+    "nuernberg": {"nuremberg", "nuernberg"},
+    "wien": {"vienna", "wien"},
+    "zuerich": {"zurich", "zuerich"},
+}
+
+
+def city_tokens(city: str) -> set[str]:
+    base = fold_accents(city).lower().strip()
+    return _CITY_ALIASES.get(base, {base}) if base else set()
+
+
+def location_mentions_city(location: str | None, city: str) -> bool:
+    """True if a free-text location string plausibly refers to ``city`` (or is remote)."""
+    if not city:
+        return True
+    if not location:
+        return False
+    loc = fold_accents(location).lower()
+    if "remote" in loc:
+        return True
+    return any(token in loc for token in city_tokens(city))

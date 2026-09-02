@@ -16,7 +16,7 @@ from sqlmodel import col, select
 from findmyjob.llm.analyzer import ANALYZER_VERSION
 from findmyjob.llm.client import LlmClient, LlmError
 from findmyjob.models.enums import JobLifecycle
-from findmyjob.models.job import Job, JobAnalysis
+from findmyjob.models.job import Job, JobAnalysis, JobScore
 from findmyjob.pipelines.base import Pipeline, PipelineResult
 from findmyjob.pipelines.context import PipelineContext
 from findmyjob.services.analyze import analyze_job
@@ -39,6 +39,10 @@ class AnalyzePipeline(Pipeline):
             done = select(JobAnalysis.job_id).where(
                 col(JobAnalysis.analyzer_version) == ANALYZER_VERSION
             )
+            prefilter_rejected = select(JobScore.job_id).where(
+                col(JobScore.run_id) == ctx.run_id,
+                col(JobScore.hard_pass).is_(False),
+            )
             job_ids = list(
                 session.exec(
                     select(Job.id)
@@ -47,6 +51,7 @@ class AnalyzePipeline(Pipeline):
                         col(Job.lifecycle) == JobLifecycle.ACTIVE,
                         col(Job.jd_text).is_not(None),
                         col(Job.id).not_in(done),
+                        col(Job.id).not_in(prefilter_rejected),
                     )
                     .order_by(col(Job.id))
                     .limit(_MAX_PER_RUN)

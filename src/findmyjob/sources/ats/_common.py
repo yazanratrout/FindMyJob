@@ -6,27 +6,12 @@ from typing import ClassVar
 
 from findmyjob.config import Settings
 from findmyjob.logging import get_logger
-from findmyjob.normalize import fold_accents
+from findmyjob.normalize import city_tokens, fold_accents
 from findmyjob.services.http import HttpClient
 from findmyjob.sources._parsing import is_recent, matches_any_keyword
 from findmyjob.sources.base import CompanyRef, JobSource, RawJob, SourceQuery
 
 log = get_logger("source.ats")
-
-# Common English/German spellings for German cities, so a curated company's
-# English-language posting isn't dropped by a German target city (and vice versa).
-_CITY_ALIASES: dict[str, set[str]] = {
-    "muenchen": {"munich", "muenchen", "munchen", "monaco di baviera"},
-    "koeln": {"cologne", "koeln", "koln"},
-    "nuernberg": {"nuremberg", "nuernberg"},
-    "wien": {"vienna", "wien"},
-    "zuerich": {"zurich", "zuerich"},
-}
-
-
-def _city_tokens(city: str) -> set[str]:
-    base = fold_accents(city).lower().strip()
-    return _CITY_ALIASES.get(base, {base}) if base else set()
 
 
 # Title cues that mark a student-suitable role, by our job-type vocabulary.
@@ -56,7 +41,7 @@ def location_ok(location: str | None, is_remote: bool, query: SourceQuery) -> bo
     loc = fold_accents(location).lower()
     if "remote" in loc:
         return True
-    return any(token in loc for token in _city_tokens(query.city))
+    return any(token in loc for token in city_tokens(query.city))
 
 
 def keep_posting(raw: RawJob, query: SourceQuery) -> bool:
