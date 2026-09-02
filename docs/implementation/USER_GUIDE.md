@@ -83,9 +83,11 @@ until you apply it, and you can always re-edit the weights by hand in Settings.
 ## Running the pipeline manually
 
 ```bash
-just run-pipeline            # run the whole daily job now
-findmyjob pipeline list      # show the configured stages
-findmyjob calibrate          # suggested score weights from your feedback
+just run-pipeline                         # run the whole daily job now
+just run-pipeline --fetch-only            # only ingest postings
+just run-pipeline --source ba --limit 20  # one source, capped (debugging)
+findmyjob pipeline list                   # show the configured stages
+findmyjob calibrate                       # suggested score weights from feedback
 ```
 
 Inspect past runs from the **Runs** tab in the web UI (per-stage status,

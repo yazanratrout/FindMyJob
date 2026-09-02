@@ -89,6 +89,7 @@ def create_app() -> FastAPI:
         jobs,
         profile,
         runs,
+        sources,
     )
     from findmyjob.api.routes import settings as settings_routes
 
@@ -108,6 +109,7 @@ def create_app() -> FastAPI:
     app.include_router(digests.router, prefix="/api", dependencies=guarded)
     app.include_router(eligibility.router, prefix="/api", dependencies=guarded)
     app.include_router(calibration.router, prefix="/api", dependencies=guarded)
+    app.include_router(sources.router, prefix="/api", dependencies=guarded)
 
     frontend_dist = REPO_ROOT / "frontend" / "dist"
     if frontend_dist.is_dir():

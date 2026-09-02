@@ -32,6 +32,12 @@ logs/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+*.tsbuildinfo
+.eslintcache
+
+# ---- Backups (local only) ----
+backups/
+*.bak
 
 # ---- Editors / OS ----
 .DS_Store

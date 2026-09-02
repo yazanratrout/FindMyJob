@@ -22,12 +22,22 @@ class FetchPipeline(Pipeline):
     name: ClassVar[str] = "fetch"
     critical: ClassVar[bool] = True
 
-    def __init__(self, http_factory: Callable[[], HttpClient] | None = None) -> None:
+    def __init__(
+        self,
+        http_factory: Callable[[], HttpClient] | None = None,
+        *,
+        only: set[str] | None = None,
+        limit_per_source: int | None = None,
+    ) -> None:
         self._http_factory = http_factory or HttpClient
+        self._only = only
+        self._limit_per_source = limit_per_source
 
     async def run(self, ctx: PipelineContext) -> PipelineResult:
         res = self.result()
         query = build_source_query(ctx.app_settings)
+        if self._limit_per_source is not None:
+            query.limit_per_source = self._limit_per_source
         log = ctx.bind(pipeline=self.name)
 
         with ctx.session() as session:
@@ -35,6 +45,8 @@ class FetchPipeline(Pipeline):
 
         async with self._http_factory() as http:
             sources = build_sources(get_settings(), ctx.app_settings, http, companies)
+            if self._only is not None:
+                sources = [s for s in sources if s.key in self._only]
             res.stats["sources_active"] = len(sources)
             if not sources:
                 log.warning("fetch.no_sources")
@@ -53,7 +65,12 @@ class FetchPipeline(Pipeline):
                 with ctx.session() as session:
                     for raw in raw_jobs:
                         try:
-                            _, is_new = store_raw_job(session, raw, run_id=ctx.run_id)
+                            _, is_new = store_raw_job(
+                                session,
+                                raw,
+                                run_id=ctx.run_id,
+                                repost_days=ctx.app_settings.repost_days,
+                            )
                             created += int(is_new)
                         except Exception as exc:  # one bad posting must not stop the source
                             res.add_error(f"job:{source.key}:{raw.source_job_id}", exc)

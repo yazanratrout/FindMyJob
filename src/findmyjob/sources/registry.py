@@ -26,6 +26,31 @@ _SIMPLE_SOURCE_CLASSES: tuple[type[JobSource], ...] = (
     TheMuseSource,
 )
 
+#: every connector class, for read-only introspection (`GET /api/sources`).
+ALL_SOURCE_CLASSES: tuple[type[JobSource], ...] = (
+    *_SIMPLE_SOURCE_CLASSES,
+    *ATS_SOURCE_CLASSES,
+    JsonLdSource,
+)
+
+
+def source_catalog(
+    process_settings: Settings, app_settings: AppSettings
+) -> list[dict[str, object]]:
+    """Describe every source: whether it is enabled and whether its keys are set."""
+    return [
+        {
+            "key": cls.key,
+            "display_name": cls.display_name,
+            "enabled": app_settings.sources_enabled.get(cls.key, True),
+            "configured": all(
+                getattr(process_settings, name, None) for name in cls.requires_secrets
+            ),
+            "requires_secrets": list(cls.requires_secrets),
+        }
+        for cls in ALL_SOURCE_CLASSES
+    ]
+
 
 def build_sources(
     process_settings: Settings,

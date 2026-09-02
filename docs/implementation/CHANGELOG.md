@@ -5,6 +5,36 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### Spec-conformance pass (post-CP25 audit)
+A sweep of every checkpoint against the plan closed the remaining gaps:
+- **Repost rule (CP8)** — `store_raw_job` now detects a posting last seen more
+  than `repost_days` (21) ago reappearing while linked as a duplicate or no
+  longer active: it is unlinked, re-activated, re-flagged first-seen this run
+  and its stale `job_score` rows are dropped so it re-ranks from scratch.
+- **JSON-LD merge in `enrich` (CP7)** — the `datePosted` / `baseSalary` hints
+  the extractor already produced are now written back onto the job when it has
+  no date / salary of its own.
+- **`GET/PUT /api/sources` (CP5)** — a read model listing each connector with
+  its enabled + credential-configured state; `PUT` toggles it (writes the same
+  `sources_enabled` the wizard edits). `sources/registry.source_catalog`.
+- **`pipeline run --source KEY --limit N` (CP12)** — narrow the fetch stage for
+  debugging; threaded through `default_pipelines` / `build_default_orchestrator`.
+- **Job-detail Analysis section (CP18)** — the drawer now renders the extracted
+  must-haves / nice-to-haves, skills (required vs nice), languages, hours,
+  contract, enrolment, start, deadline, apply method and red flags, with the
+  analyzer's `source_snippets` shown as hover tooltips.
+- **Dashboard filters (CP17)** — source, contract type, posted-within and
+  has-salary filters alongside the existing bucket + search.
+- **Notifications UI (CP21 decision)** — removed the vestigial e-mail / Telegram
+  channel pickers from onboarding; replaced with a note that digests live in the
+  Activity tab, plus a digest-size field.
+- `data/.gitkeep` is tracked so the runtime dir exists on a fresh clone.
+- 11 new tests (`test_repost`, `test_sources_route`, `test_registry`, JSON-LD
+  enrich case). Documented deviations: token-overlap scoring instead of
+  embeddings in `field_relevance` / `skills_match`; explicit source registry
+  instead of subclass auto-discovery; plain bars instead of Recharts; scanned /
+  image-only PDF OCR (Claude vision) is a planned enhancement, not in v1.
+
 ### CP25 — Calibration & feedback loop
 - `job_feedback` table (one row per job: `verdict` up/down, `note`) + migration
   `4a07427937c2`; `services/feedback` upsert/clear helpers.

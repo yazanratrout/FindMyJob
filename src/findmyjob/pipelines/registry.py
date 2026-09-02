@@ -20,15 +20,22 @@ from findmyjob.pipelines.prefilter import PrefilterPipeline
 from findmyjob.pipelines.score import ScorePipeline
 
 
-def default_pipelines(*, fetch_only: bool = False, no_llm: bool = False) -> list[Pipeline]:
+def default_pipelines(
+    *,
+    fetch_only: bool = False,
+    no_llm: bool = False,
+    only_sources: set[str] | None = None,
+    limit_per_source: int | None = None,
+) -> list[Pipeline]:
     """The daily sequence, in execution order.
 
     * ``fetch_only`` — just ingest, skip everything downstream.
     * ``no_llm`` — run the deterministic stages only (no ``analyze`` / ``judge``);
       ``score`` still runs on whatever analyses already exist.
+    * ``only_sources`` / ``limit_per_source`` — narrow the fetch stage (debugging).
     """
     pipelines: list[Pipeline] = [
-        FetchPipeline(),
+        FetchPipeline(only=only_sources, limit_per_source=limit_per_source),
         NormalizePipeline(),
         EnrichPipeline(),
         DedupPipeline(),
@@ -47,5 +54,18 @@ def default_pipelines(*, fetch_only: bool = False, no_llm: bool = False) -> list
     return pipelines
 
 
-def build_default_orchestrator(*, fetch_only: bool = False, no_llm: bool = False) -> Orchestrator:
-    return Orchestrator(default_pipelines(fetch_only=fetch_only, no_llm=no_llm))
+def build_default_orchestrator(
+    *,
+    fetch_only: bool = False,
+    no_llm: bool = False,
+    only_sources: set[str] | None = None,
+    limit_per_source: int | None = None,
+) -> Orchestrator:
+    return Orchestrator(
+        default_pipelines(
+            fetch_only=fetch_only,
+            no_llm=no_llm,
+            only_sources=only_sources,
+            limit_per_source=limit_per_source,
+        )
+    )

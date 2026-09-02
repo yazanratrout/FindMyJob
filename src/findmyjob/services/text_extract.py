@@ -1,8 +1,10 @@
 """Plain-text extraction from uploaded documents.
 
 Supported without an LLM: PDF (``pdfplumber``), DOCX (``python-docx``), and
-plain text. Image-only PDFs / scans fall back to Claude vision in CP3; here we
-just return whatever text layer exists.
+plain text. Image-only PDFs / scans have no text layer to read; they are stored
+with ``parse_status = pending`` and an empty ``extracted_text``. A Claude-vision
+OCR fallback for those is a planned enhancement, not part of v1 - the profile
+parser still runs on whatever other documents provide text.
 """
 
 from __future__ import annotations

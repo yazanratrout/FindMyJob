@@ -21,6 +21,7 @@ from findmyjob.pipelines.context import PipelineContext
 from findmyjob.services.enrich import enrich_url
 from findmyjob.services.http import HttpClient
 from findmyjob.services.jobs import content_hash
+from findmyjob.sources._parsing import parse_datetime
 from findmyjob.sources.robots import RobotsCache
 
 _MIN_CHARS = 400
@@ -77,10 +78,20 @@ class EnrichPipeline(Pipeline):
                     if outcome.dead:
                         job.lifecycle = JobLifecycle.DEAD
                         res.bump("dead")
-                    elif outcome.text and len(outcome.text) > len(job.jd_text or ""):
-                        job.jd_text = outcome.text
-                        job.jd_content_hash = content_hash(outcome.text)
-                        res.bump("enriched")
+                    else:
+                        if outcome.text and len(outcome.text) > len(job.jd_text or ""):
+                            job.jd_text = outcome.text
+                            job.jd_content_hash = content_hash(outcome.text)
+                            res.bump("enriched")
+                        # merge structured JSON-LD fields the posting listed
+                        if job.posted_at is None and outcome.posted_at_hint:
+                            hinted = parse_datetime(outcome.posted_at_hint)
+                            if hinted is not None:
+                                job.posted_at = hinted
+                                res.bump("posted_at_filled")
+                        if not job.salary_raw and outcome.salary_hint:
+                            job.salary_raw = outcome.salary_hint
+                            res.bump("salary_filled")
                     session.add(job)
 
         res.finalize_status()

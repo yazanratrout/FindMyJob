@@ -3,13 +3,14 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import timedelta
 
 from sqlmodel import Session, col, select
 
 from findmyjob.models.base import utcnow
 from findmyjob.models.config import Company
-from findmyjob.models.enums import AtsType, CompanyOrigin
-from findmyjob.models.job import Job
+from findmyjob.models.enums import AtsType, CompanyOrigin, JobLifecycle
+from findmyjob.models.job import Job, JobScore
 from findmyjob.normalize import normalize_company_name, normalize_title
 from findmyjob.sources.base import RawJob
 
@@ -29,11 +30,16 @@ def _best_text(raw: RawJob) -> str | None:
     return raw.description_text or None
 
 
-def store_raw_job(session: Session, raw: RawJob, *, run_id: int) -> tuple[Job, bool]:
+def store_raw_job(
+    session: Session, raw: RawJob, *, run_id: int, repost_days: int = 21
+) -> tuple[Job, bool]:
     """Insert or refresh a job by ``(source_key, source_job_id)``.
 
-    Returns ``(job, created)``. Idempotent: a second call only bumps
-    ``last_seen_at``.
+    Returns ``(job, is_new)``. Idempotent: a routine second call only bumps
+    ``last_seen_at``. If a posting that was last seen more than ``repost_days``
+    ago reappears while linked as a duplicate or no longer active, it is treated
+    as **new** - unlinked, re-activated, re-flagged as first-seen this run, and
+    its stale scores dropped so the pipeline re-evaluates it from scratch.
     """
     existing = session.exec(
         select(Job).where(
@@ -44,12 +50,30 @@ def store_raw_job(session: Session, raw: RawJob, *, run_id: int) -> tuple[Job, b
 
     jd_text = _best_text(raw)
     if existing is not None:
-        existing.last_seen_at = utcnow()
+        now = utcnow()
+        stale_for = now - existing.last_seen_at
+        is_repost = (
+            repost_days > 0
+            and stale_for > timedelta(days=repost_days)
+            and (
+                existing.canonical_job_id is not None
+                or existing.lifecycle is not JobLifecycle.ACTIVE
+            )
+        )
+        existing.last_seen_at = now
         if jd_text and not existing.jd_text:
             existing.jd_text = jd_text
             existing.jd_content_hash = content_hash(jd_text)
+        if is_repost:
+            existing.canonical_job_id = None
+            existing.lifecycle = JobLifecycle.ACTIVE
+            existing.first_seen_run_id = run_id
+            for score in session.exec(
+                select(JobScore).where(col(JobScore.job_id) == existing.id)
+            ).all():
+                session.delete(score)
         session.add(existing)
-        return existing, False
+        return existing, is_repost
 
     job = Job(
         source_key=raw.source_key,

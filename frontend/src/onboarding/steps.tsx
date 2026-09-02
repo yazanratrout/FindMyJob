@@ -446,7 +446,6 @@ export function LimitsStep({ draft, set }: StepProps) {
 
 // ----------------------------------------------------------------- Schedule
 export function ScheduleStep({ draft, set }: StepProps) {
-  const channels = draft.notify_channels ?? [];
   const sources = draft.sources_enabled ?? {};
   return (
     <div className="space-y-4">
@@ -467,34 +466,20 @@ export function ScheduleStep({ draft, set }: StepProps) {
         </Field>
       </div>
 
-      <Field label="Notifications">
-        <ChipToggle
-          options={[
-            { value: "email", label: "Email" },
-            { value: "telegram", label: "Telegram" },
-          ]}
-          values={channels}
-          onChange={(v) => set("notify_channels", v)}
+      <p className="rounded-md bg-slate-50 p-3 text-xs text-slate-500">
+        After each run a digest appears in the <strong>Activity</strong> tab -
+        run stats, new recommendations, follow-ups due. There are no e-mail or
+        chat notifications; everything stays in this app.
+      </p>
+
+      <Field label="Digest size (top recommendations shown)">
+        <input
+          type="number"
+          className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
+          value={draft.digest_top_n ?? 8}
+          onChange={(e) => set("digest_top_n", Number(e.target.value))}
         />
       </Field>
-      {channels.includes("email") && (
-        <Field label="Notification email">
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={draft.notify_email ?? ""}
-            onChange={(e) => set("notify_email", e.target.value)}
-          />
-        </Field>
-      )}
-      {channels.includes("telegram") && (
-        <Field label="Telegram chat id">
-          <input
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm"
-            value={draft.notify_telegram_chat_id ?? ""}
-            onChange={(e) => set("notify_telegram_chat_id", e.target.value)}
-          />
-        </Field>
-      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label="Cover letter language">

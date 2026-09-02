@@ -123,6 +123,141 @@ const NECESSITY_COLOR: Record<DocumentNeed["necessity"], string> = {
   optional: "text-slate-400",
 };
 
+interface Analysis {
+  must_haves?: string[];
+  nice_haves?: string[];
+  skills?: { name: string; required?: boolean }[];
+  languages?: { lang: string; cefr?: string | null; required?: boolean }[];
+  weekly_hours?: number | null;
+  weekly_hours_basis?: string;
+  contract_type?: string;
+  start_date_text?: string | null;
+  deadline?: string | null;
+  application_method?: string;
+  enrollment_required?: string;
+  red_flags?: string[];
+  source_snippets?: Record<string, string>;
+}
+
+function Fact({
+  label,
+  value,
+  snippet,
+}: {
+  label: string;
+  value: string;
+  snippet?: string;
+}) {
+  return (
+    <div className="flex gap-2" title={snippet}>
+      <dt className="w-32 shrink-0 text-slate-400">{label}</dt>
+      <dd className={cn(snippet && "cursor-help border-b border-dotted border-slate-300")}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+function AnalysisSection({ analysis }: { analysis: Analysis }) {
+  const s = analysis.source_snippets ?? {};
+  const chips = (items: string[] | undefined, cls: string) =>
+    (items ?? []).map((t) => (
+      <span key={t} className={cn("rounded px-2 py-0.5 text-xs", cls)}>
+        {t}
+      </span>
+    ));
+
+  return (
+    <section>
+      <h3 className="mb-2 text-sm font-semibold text-slate-500 uppercase">Analysis</h3>
+      <dl className="space-y-1 text-sm">
+        {analysis.weekly_hours != null && (
+          <Fact
+            label="Weekly hours"
+            value={`${analysis.weekly_hours}h (${analysis.weekly_hours_basis ?? "unknown"})`}
+            snippet={s.weekly_hours}
+          />
+        )}
+        {analysis.contract_type && (
+          <Fact label="Contract" value={analysis.contract_type} snippet={s.contract_type} />
+        )}
+        {analysis.enrollment_required && analysis.enrollment_required !== "unknown" && (
+          <Fact
+            label="Enrolment"
+            value={analysis.enrollment_required}
+            snippet={s.enrollment_required}
+          />
+        )}
+        {analysis.start_date_text && (
+          <Fact label="Start" value={analysis.start_date_text} snippet={s.start_date_text} />
+        )}
+        {analysis.deadline && (
+          <Fact label="Deadline" value={analysis.deadline} snippet={s.deadline} />
+        )}
+        {analysis.application_method && analysis.application_method !== "unknown" && (
+          <Fact label="Apply via" value={analysis.application_method} />
+        )}
+      </dl>
+
+      {(analysis.languages ?? []).length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1" title={s.languages}>
+          {(analysis.languages ?? []).map((l) => (
+            <span key={l.lang} className="rounded bg-slate-100 px-2 py-0.5 text-xs">
+              {l.lang}
+              {l.cefr ? ` ${l.cefr}` : ""}
+              {l.required === false ? " (nice)" : ""}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {(analysis.skills ?? []).length > 0 && (
+        <div className="mt-2">
+          <div className="mb-1 text-xs text-slate-400">Skills</div>
+          <div className="flex flex-wrap gap-1">
+            {(analysis.skills ?? []).map((sk) => (
+              <span
+                key={sk.name}
+                className={cn(
+                  "rounded px-2 py-0.5 text-xs",
+                  sk.required ? "bg-slate-800 text-white" : "bg-slate-100",
+                )}
+              >
+                {sk.name}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(analysis.must_haves ?? []).length > 0 && (
+        <div className="mt-2">
+          <div className="mb-1 text-xs text-slate-400">Must-haves</div>
+          <div className="flex flex-wrap gap-1">
+            {chips(analysis.must_haves, "bg-amber-50 text-amber-800")}
+          </div>
+        </div>
+      )}
+      {(analysis.nice_haves ?? []).length > 0 && (
+        <div className="mt-2">
+          <div className="mb-1 text-xs text-slate-400">Nice-to-have</div>
+          <div className="flex flex-wrap gap-1">
+            {chips(analysis.nice_haves, "bg-slate-100 text-slate-600")}
+          </div>
+        </div>
+      )}
+      {(analysis.red_flags ?? []).length > 0 && (
+        <div className="mt-2">
+          <div className="mb-1 text-xs text-red-400">Red flags</div>
+          <div className="flex flex-wrap gap-1">
+            {chips(analysis.red_flags, "bg-red-50 text-red-700")}
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export function JobDetailDrawer({
   jobId,
   onClose,
@@ -234,6 +369,8 @@ export function JobDetailDrawer({
                     )}
                   </section>
                 )}
+
+                {d.analysis && <AnalysisSection analysis={d.analysis as Analysis} />}
 
                 <section>
                   <h3 className="mb-1 text-sm font-semibold text-slate-500 uppercase">

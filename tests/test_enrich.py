@@ -60,6 +60,35 @@ async def test_enriches_from_page_content(db_session: Session):
 
 
 @respx.mock
+async def test_merges_jsonld_date_and_salary(db_session: Session):
+    url = "https://jobs.test/2"
+    job_id = _thin_job(db_session, url, jd_text="short")
+    db_session.commit()
+
+    respx.get("https://jobs.test/robots.txt").mock(return_value=httpx.Response(404))
+    respx.get(url).mock(
+        return_value=httpx.Response(
+            200,
+            text=f"""<html><body><article><p>{_LONG_DESC}</p></article>
+            <script type="application/ld+json">
+            {{"@type":"JobPosting","title":"Werkstudent Data",
+              "description":"{_LONG_DESC}",
+              "datePosted":"2026-08-15",
+              "baseSalary":{{"@type":"MonetaryAmount","currency":"EUR",
+                "value":{{"@type":"QuantitativeValue","minValue":16,"maxValue":18,
+                          "unitText":"HOUR"}}}}}}
+            </script></body></html>""",
+        )
+    )
+
+    await Orchestrator([EnrichPipeline(_fast_http)]).execute()
+    with Session(get_engine()) as s:
+        job = s.get(Job, job_id)
+        assert job.posted_at is not None and job.posted_at.year == 2026
+        assert job.salary_raw and "16" in job.salary_raw
+
+
+@respx.mock
 async def test_dead_link_marks_job_dead(db_session: Session):
     url = "https://gone.test/9"
     job_id = _thin_job(db_session, url)

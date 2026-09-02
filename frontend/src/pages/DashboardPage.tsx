@@ -79,11 +79,37 @@ export function DashboardPage() {
 
   const [bucket, setBucket] = useState("recommended");
   const [search, setSearch] = useState("");
+  const [source, setSource] = useState("");
+  const [contract, setContract] = useState("");
+  const [hasSalary, setHasSalary] = useState(false);
+  const [maxAge, setMaxAge] = useState(0);
   const [openId, setOpenId] = useState<number | null>(null);
 
-  const jobs = useJobs({ bucket, search: search.trim() || undefined });
+  const jobs = useJobs({
+    bucket,
+    search: search.trim() || undefined,
+    source: source || undefined,
+  });
   const counts = jobs.data?.counts ?? {};
-  const list = useMemo(() => jobs.data?.jobs ?? [], [jobs.data]);
+  const allJobs = useMemo(() => jobs.data?.jobs ?? [], [jobs.data]);
+
+  const sources = useMemo(
+    () => [...new Set(allJobs.map((j) => j.source))].sort(),
+    [allJobs],
+  );
+  const contracts = useMemo(
+    () => [...new Set(allJobs.map((j) => j.contract_type).filter(Boolean))].sort(),
+    [allJobs],
+  );
+  const list = useMemo(() => {
+    const cutoff = maxAge ? Date.now() - maxAge * 86_400_000 : 0;
+    return allJobs.filter(
+      (j) =>
+        (!contract || j.contract_type === contract) &&
+        (!hasSalary || !!j.salary) &&
+        (!cutoff || (j.posted_at ? Date.parse(j.posted_at) >= cutoff : false)),
+    );
+  }, [allJobs, contract, hasSalary, maxAge]);
 
   return (
     <div className="space-y-6">
@@ -152,6 +178,56 @@ export function DashboardPage() {
           onChange={(e) => setSearch(e.target.value)}
           className="ml-auto max-w-xs"
         />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <select
+          className="rounded border border-slate-300 px-2 py-1"
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+        >
+          <option value="">All sources</option>
+          {sources.map((s) => (
+            <option key={s} value={s}>
+              {s}
+            </option>
+          ))}
+        </select>
+        <select
+          className="rounded border border-slate-300 px-2 py-1"
+          value={contract}
+          onChange={(e) => setContract(e.target.value)}
+        >
+          <option value="">Any contract</option>
+          {contracts.map((c) => (
+            <option key={c} value={c ?? ""}>
+              {c}
+            </option>
+          ))}
+        </select>
+        <select
+          className="rounded border border-slate-300 px-2 py-1"
+          value={maxAge}
+          onChange={(e) => setMaxAge(Number(e.target.value))}
+        >
+          <option value={0}>Any age</option>
+          <option value={7}>Last 7 days</option>
+          <option value={14}>Last 14 days</option>
+          <option value={30}>Last 30 days</option>
+        </select>
+        <label className="flex items-center gap-1 text-slate-600">
+          <input
+            type="checkbox"
+            checked={hasSalary}
+            onChange={(e) => setHasSalary(e.target.checked)}
+          />
+          Has salary
+        </label>
+        {list.length !== allJobs.length && (
+          <span className="text-slate-400">
+            {list.length} of {allJobs.length}
+          </span>
+        )}
       </div>
 
       {jobs.isLoading ? (

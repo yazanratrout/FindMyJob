@@ -4,10 +4,12 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP25 — **all 25 checkpoints complete.**
-**Resume from:** nothing outstanding. The build is done: Milestones 1-7 all
-shipped. Future work is maintenance / the deferred items below (frontend tests,
-OCR fallback, the repost rule, an optional logistic re-ranker at ≥ 40 labels).
+**Last updated:** post-CP25 spec-conformance audit — **all 25 checkpoints complete.**
+**Resume from:** nothing outstanding. Every checkpoint has been re-checked
+against the plan and the remaining gaps closed (repost rule, JSON-LD enrich
+merge, `/api/sources`, `pipeline run --source/--limit`). Future work is the
+deferred list below (frontend tests, scanned-PDF OCR, optional logistic
+re-ranker at ≥ 40 labels).
 
 ---
 
@@ -106,13 +108,23 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
 
 ## Known gaps / deferred
 
-- No frontend tests yet.
-- Image/scanned-PDF documents are stored but not OCR'd (CP3 vision fallback
-  deferred; `parse_status = PENDING`).
-- The repost rule (a long-gone posting reappearing counts as new) is not yet
-  implemented - `dedup` currently always links by canonical key.
+- No frontend tests yet (Vitest/RTL — Appendix E).
+- Image/scanned-PDF documents are stored but not OCR'd (`parse_status = pending`,
+  empty text). A Claude-vision OCR fallback is a planned enhancement; the profile
+  parser still works from the other documents.
 - Calibration is correlation-based only; the optional per-user logistic
   re-ranker at ≥ 40 labelled jobs (CP25 stretch goal) is not built.
+
+## Deliberate deviations from the plan (functionally equivalent)
+
+- `field_relevance` / `skills_match` use token overlap, not sentence-embedding
+  cosine — deterministic, no model call, covered by table-driven tests.
+- `sources/registry` lists the connector classes explicitly rather than
+  auto-discovering `JobSource` subclasses (explicit > reflection).
+- The score breakdown renders as CSS bars, not a Recharts chart (no charting
+  dependency pulled in).
+- Notifications are in-app only (Activity digests) by the owner's explicit
+  request — no `services/notifications`, e-mail or Telegram.
 
 ## How to resume
 
