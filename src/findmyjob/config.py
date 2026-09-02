@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     llm_model_cheap: str = Field(default="claude-haiku-4-5-20251001", alias="LLM_MODEL_CHEAP")
     llm_model_smart: str = Field(default="claude-sonnet-5", alias="LLM_MODEL_SMART")
     llm_monthly_budget_eur: float = Field(default=10.0, alias="LLM_MONTHLY_BUDGET_EUR")
+    # Approximate prices in EUR per 1M tokens. Update to match current pricing.
+    llm_price_cheap_in: float = Field(default=0.80, alias="LLM_PRICE_CHEAP_IN")
+    llm_price_cheap_out: float = Field(default=4.00, alias="LLM_PRICE_CHEAP_OUT")
+    llm_price_smart_in: float = Field(default=2.80, alias="LLM_PRICE_SMART_IN")
+    llm_price_smart_out: float = Field(default=14.00, alias="LLM_PRICE_SMART_OUT")
 
     # ---- Job source credentials ---------------------------------------
     ba_api_client_id: str | None = Field(default=None, alias="BA_API_CLIENT_ID")

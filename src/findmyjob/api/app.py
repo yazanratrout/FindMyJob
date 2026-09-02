@@ -55,10 +55,11 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
         )
 
-    from findmyjob.api.routes import documents, health
+    from findmyjob.api.routes import documents, health, profile
 
     app.include_router(health.router, prefix="/api")
     app.include_router(documents.router, prefix="/api")
+    app.include_router(profile.router, prefix="/api")
 
     frontend_dist = REPO_ROOT / "frontend" / "dist"
     if frontend_dist.is_dir():

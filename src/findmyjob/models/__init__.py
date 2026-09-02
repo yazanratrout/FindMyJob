@@ -17,6 +17,7 @@ from findmyjob.models.config import (
 )
 from findmyjob.models.eligibility import EligibilityEntry
 from findmyjob.models.job import Job, JobAnalysis, JobEmbedding, JobScore
+from findmyjob.models.llm_cache import LlmCacheEntry
 from findmyjob.models.profile import Document, Profile, ProfileSkill
 from findmyjob.models.run import LlmCall, PipelineRun, Run
 
@@ -34,6 +35,7 @@ __all__ = [
     "JobAnalysis",
     "JobEmbedding",
     "JobScore",
+    "LlmCacheEntry",
     "LlmCall",
     "PipelineRun",
     "Profile",
