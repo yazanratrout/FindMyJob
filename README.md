@@ -29,16 +29,18 @@ drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
 ## Status
 
-Early build — **Milestones 1–3 complete (CP0–CP12): the whole backend pipeline
-runs end to end.** `findmyjob pipeline run` (or `POST /api/runs`) executes:
+Early build — **Milestones 1–4 complete (CP0–CP14): the whole backend runs end
+to end, on a schedule, within a budget.** `findmyjob pipeline run` (or
+`POST /api/runs`, or the daily scheduler) executes:
 `fetch` (Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse + the public ATS
 boards of curated employers) → `normalize` → `enrich` (robots-aware) → `dedup`
 (canonical-key + local embeddings) → `prefilter` (cheap hard filters) →
 `analyze` (LLM extraction) → `score` (hard checks + weighted soft score) →
 `judge` (LLM holistic fit, blended) → `decide` (documents checklist). Plus the
-config / profile / company / settings / runs REST API. **Next: the scheduler
-(CP13), cost controls (CP14), then the React web UI (CP15+).** No UI yet — use
-the API at `/api/docs`. See [`PROGRESS.md`](docs/implementation/PROGRESS.md).
+config / profile / company / settings / runs / costs REST API, an in-process
+daily scheduler, and a monthly LLM-budget guard. **Next: the React web UI
+(CP15+).** No UI yet — use the API at `/api/docs`. See
+[`PROGRESS.md`](docs/implementation/PROGRESS.md).
 
 ## Requirements
 
