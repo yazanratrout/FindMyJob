@@ -69,6 +69,9 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "-ra -q"
 filterwarnings = ["error::DeprecationWarning:findmyjob.*"]
+markers = [
+    "slow: end-to-end / orchestrator integration test (run with `just test-all`)",
+]
 
 [tool.coverage.run]
 source = ["src/findmyjob"]

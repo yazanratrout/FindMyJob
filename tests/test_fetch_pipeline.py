@@ -16,7 +16,7 @@ from findmyjob.services.http import HttpClient
 from findmyjob.services.settings import update_app_settings
 from findmyjob.sources.registry import build_sources
 
-pytestmark = pytest.mark.usefixtures("seeded_session")
+pytestmark = [pytest.mark.usefixtures("seeded_session"), pytest.mark.slow]
 
 _ARBEITNOW = "https://www.arbeitnow.com/api/job-board-api"
 

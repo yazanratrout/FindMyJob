@@ -4,14 +4,13 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP22
-**Resume from:** CP23 — Observability, retention, backup. Run-detail API/page
-(per-stage timings/stats/errors already in `pipeline_run`); rotating logs are
-done — add a weekly retention job (delete archived jobs + analyses older than
-`retention_days`, keep anything tied to an application/cover-letter) and a
-nightly `sqlite3 .backup` to `data/backups/` (keep 14). Also split the test
-suite into fast/slow markers — it's ~10 min now (trafilatura import + per-test
-DB reset). Then CP24 (macOS packaging), CP25 (calibration).
+**Last updated:** end of CP23
+**Resume from:** CP24 — Packaging & macOS deployment. `just setup` already
+installs deps + migrates + seeds + builds the frontend; add: prefetch the
+`fastembed` model in `just setup` (so `dedup` doesn't download on first run),
+a richer `findmyjob doctor` (Node present? frontend built? each source key
+valid? Anthropic key reachable?), a `just start` that serves the built UI, and
+a README install walkthrough. Then CP25 (calibration).
 
 ---
 
@@ -42,11 +41,11 @@ DB reset). Then CP24 (macOS packaging), CP25 (calibration).
 | CP20 | Application tracker | ✅ done |
 | CP21 | In-app run digests | ✅ done |
 | CP22 | Eligibility module | ✅ done |
-| CP23 | Observability, retention, backup | ⬜ todo |
+| CP23 | Observability, retention, backup | ✅ done |
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) in progress** (CP21, CP22 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) in progress** (CP21–CP23 done).
 
 ---
 
@@ -95,17 +94,19 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
 - **API** (`api/`): `/api/{health,auth,documents,profile,settings,semester-terms,
   companies,runs,costs,jobs,cover-letters,applications,digests,eligibility}`.
 - **Frontend** (`frontend/`): auth, onboarding wizard, Settings, ranked dashboard,
-  job-detail drawer, application tracker, Activity page (digests + badge),
-  **Eligibility page** (conditional), Runs list.
-- **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
-  `shell`.
-- **Tests**: ~189 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+  job-detail drawer, application tracker, Activity (digests + badge), Eligibility
+  (conditional), **Runs list + run-detail drawer**.
+- **CLI**: `findmyjob db …`, `pipeline run|list`, `schedule status`,
+  `maintenance backup|prune`, `doctor`, `shell`.
+- **Maintenance**: nightly SQLite backup + weekly retention prune, scheduled and
+  as CLI (`services/backup`, `services/retention`).
+- **Tests**: ~192 passing (backend; `just test` runs ~125 fast, `just test-all` all) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- No observability job / packaging yet (CP23-CP24). No frontend tests yet.
-- Full test suite ~10 min — split into fast/slow markers in CP23.
+- No macOS packaging polish yet (CP24); no calibration loop (CP25).
+- No frontend tests yet.
 - No application tracker / eligibility module / notifications yet (CP20-CP22).
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.

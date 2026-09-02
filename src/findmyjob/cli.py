@@ -94,6 +94,25 @@ def cmd_schedule_status(_args: argparse.Namespace) -> int:
     return 0
 
 
+# ------------------------------------------------------------------- maintenance
+def cmd_maintenance_backup(_args: argparse.Namespace) -> int:
+    from findmyjob.services.backup import backup
+
+    path = backup()
+    print(f"Backup written: {path}")
+    return 0
+
+
+def cmd_maintenance_prune(_args: argparse.Namespace) -> int:
+    from findmyjob.db import session_scope
+    from findmyjob.services.retention import prune
+
+    with session_scope() as session:
+        report = prune(session)
+    print(f"Pruned {report.pruned} job(s).")
+    return 0
+
+
 # ------------------------------------------------------------------------ doctor
 def cmd_doctor(_args: argparse.Namespace) -> int:
     from findmyjob.services.doctor import run_doctor
@@ -144,6 +163,16 @@ def build_parser() -> argparse.ArgumentParser:
     )
     schedule.add_parser("status", help="show the configured daily run + next fire").set_defaults(
         func=cmd_schedule_status
+    )
+
+    maint = sub.add_parser("maintenance", help="database maintenance").add_subparsers(
+        dest="maintenance_command", required=True
+    )
+    maint.add_parser("backup", help="write a SQLite backup").set_defaults(
+        func=cmd_maintenance_backup
+    )
+    maint.add_parser("prune", help="delete old archived unreferenced jobs").set_defaults(
+        func=cmd_maintenance_prune
     )
 
     sub.add_parser("doctor", help="check the installation").set_defaults(func=cmd_doctor)

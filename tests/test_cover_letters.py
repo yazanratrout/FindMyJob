@@ -22,7 +22,7 @@ from findmyjob.services.cover_letters import (
 )
 from findmyjob.services.settings import update_app_settings
 
-pytestmark = pytest.mark.usefixtures("seeded_session")
+pytestmark = [pytest.mark.usefixtures("seeded_session"), pytest.mark.slow]
 
 LETTER = {
     "language": "de",

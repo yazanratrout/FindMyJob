@@ -25,7 +25,7 @@ from findmyjob.services.digest import (
 )
 from findmyjob.services.settings import update_app_settings
 
-pytestmark = pytest.mark.usefixtures("seeded_session")
+pytestmark = [pytest.mark.usefixtures("seeded_session"), pytest.mark.slow]
 
 ANALYSIS = {
     "skills": [{"name": "Python", "required": True}],

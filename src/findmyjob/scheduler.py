@@ -49,6 +49,26 @@ async def _run_pipeline() -> None:
     await build_default_orchestrator().execute(trigger=RunTrigger.SCHEDULE)
 
 
+def _nightly_backup() -> None:
+    from findmyjob.services.backup import backup
+
+    try:
+        backup()
+    except Exception:  # never let maintenance kill the scheduler
+        log.exception("scheduler.backup_failed")
+
+
+def _weekly_prune() -> None:
+    from findmyjob.db import session_scope
+    from findmyjob.services.retention import prune
+
+    try:
+        with session_scope() as session:
+            prune(session)
+    except Exception:
+        log.exception("scheduler.prune_failed")
+
+
 class PipelineScheduler:
     def __init__(self) -> None:
         self._scheduler = AsyncIOScheduler()
@@ -62,6 +82,22 @@ class PipelineScheduler:
             return
         self._scheduler.start()
         self.reschedule()
+        self._scheduler.add_job(
+            _nightly_backup,
+            CronTrigger(hour=3, minute=30),
+            id="nightly-backup",
+            replace_existing=True,
+            misfire_grace_time=_GRACE_SECONDS,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
+            _weekly_prune,
+            CronTrigger(day_of_week="sun", hour=3, minute=0),
+            id="weekly-prune",
+            replace_existing=True,
+            misfire_grace_time=_GRACE_SECONDS,
+            coalesce=True,
+        )
 
     def reschedule(self) -> None:
         with session_scope() as session:

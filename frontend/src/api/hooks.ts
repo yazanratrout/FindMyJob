@@ -19,6 +19,7 @@ import type {
   ParseResult,
   Profile,
   ProfileUpdate,
+  RunDetail,
   RunSummary,
   SemesterTerm,
   Settings,
@@ -82,6 +83,18 @@ export function useHealth() {
 
 export function useRuns() {
   return useQuery({ queryKey: keys.runs, queryFn: () => api.get<RunSummary[]>("/runs") });
+}
+
+export function useRunDetail(id: number | null) {
+  return useQuery({
+    queryKey: ["run", id],
+    queryFn: () => api.get<RunDetail>(`/runs/${id}`),
+    enabled: id != null,
+    refetchInterval: (query) =>
+      ["completed", "failed"].includes(query.state.data?.run.status ?? "")
+        ? false
+        : 1500,
+  });
 }
 
 export function useCosts() {

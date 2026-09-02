@@ -11,7 +11,7 @@ from findmyjob.pipelines.enrich import EnrichPipeline
 from findmyjob.pipelines.orchestrator import Orchestrator
 from findmyjob.services.http import HttpClient
 
-pytestmark = pytest.mark.usefixtures("seeded_session")
+pytestmark = [pytest.mark.usefixtures("seeded_session"), pytest.mark.slow]
 
 _LONG_DESC = "Build data pipelines with Python and SQL. " * 20
 

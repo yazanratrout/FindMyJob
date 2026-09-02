@@ -25,7 +25,7 @@ from findmyjob.services.profile import get_profile
 from findmyjob.services.semester import add_term
 from findmyjob.services.settings import update_app_settings
 
-pytestmark = pytest.mark.usefixtures("seeded_session")
+pytestmark = [pytest.mark.usefixtures("seeded_session"), pytest.mark.slow]
 
 YEAR = date.today().year
 

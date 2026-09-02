@@ -15,7 +15,7 @@ from findmyjob.pipelines.prefilter import PrefilterPipeline
 from findmyjob.pipelines.score import ScorePipeline
 from findmyjob.services.settings import update_app_settings
 
-pytestmark = pytest.mark.usefixtures("seeded_session")
+pytestmark = [pytest.mark.usefixtures("seeded_session"), pytest.mark.slow]
 
 ANALYSIS = {
     "must_haves": ["Python"],

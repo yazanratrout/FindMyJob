@@ -5,6 +5,23 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP23 — Observability, retention, backup
+- `services/retention.prune`: deletes canonical jobs (+ their score/analysis/
+  embedding rows) that are old (`> retention_days`), archived or dead, and not
+  referenced by an application or cover letter.
+- `services/backup.backup`: SQLite online backup to
+  `data/backups/findmyjob-<ts>.db` via the engine's connection, keeps the last
+  14.
+- Scheduler: nightly backup (03:30) + weekly prune (Sun 03:00) jobs, each
+  crash-isolated.
+- CLI: `findmyjob maintenance {backup,prune}`; `just backup` / `just prune`.
+- Frontend: **Run detail drawer** on the Runs page — per-stage status / timing /
+  stats, LLM usage, errors; live-polls while a run is in progress.
+- **Fast/slow test split**: `slow` marker on the orchestrator integration
+  modules; `just test` runs the fast subset (~125), `just test-all` (and
+  `just check`) runs everything (~192).
+- 3 new backend tests; ruff + mypy clean; `vite build` clean. No new deps.
+
 ### CP22 — Eligibility module (optional)
 - `services/eligibility` (behind `eligibility_module_enabled`): `days_used`
   (non-EU 140/280 working-day ledger, clipped to the calendar year, half-days

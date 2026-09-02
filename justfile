@@ -71,7 +71,12 @@ db-reset:
 
 # ---- Quality ------------------------------------------------------------
 
+# Fast tests only (skips end-to-end orchestrator integration tests).
 test *ARGS:
+    {{py}} -m pytest -m "not slow" {{ARGS}}
+
+# The whole suite, including the slow integration tests.
+test-all *ARGS:
     {{py}} -m pytest {{ARGS}}
 
 cov:
@@ -88,8 +93,8 @@ fmt:
 typecheck:
     {{py}} -m mypy
 
-# Run everything CI would run.
-check: lint typecheck test
+# Run everything CI would run (full test suite).
+check: lint typecheck test-all
 
 # ---- Diagnostics -------------------------------------------------------
 
@@ -98,6 +103,12 @@ doctor:
 
 schedule-status:
     {{py}} -m findmyjob schedule status
+
+backup:
+    {{py}} -m findmyjob maintenance backup
+
+prune:
+    {{py}} -m findmyjob maintenance prune
 
 # ---- macOS deployment ------------------------------------------------
 

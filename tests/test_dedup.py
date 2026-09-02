@@ -7,7 +7,7 @@ from findmyjob.models.job import Job, JobEmbedding
 from findmyjob.pipelines.dedup import DedupPipeline, canonical_key
 from findmyjob.pipelines.orchestrator import Orchestrator
 
-pytestmark = pytest.mark.usefixtures("seeded_session")
+pytestmark = [pytest.mark.usefixtures("seeded_session"), pytest.mark.slow]
 
 
 class FakeEmbedder:

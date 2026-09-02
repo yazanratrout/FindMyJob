@@ -172,6 +172,30 @@ export interface RunSummary {
   error_count: number;
 }
 
+export interface StageResult {
+  name: string;
+  order: number;
+  status: string;
+  duration_s: number;
+  stats: Record<string, unknown>;
+  error_count: number;
+}
+
+export interface LlmUsage {
+  calls: number;
+  cache_hits: number;
+  input_tokens: number;
+  output_tokens: number;
+  cost_eur: number;
+}
+
+export interface RunDetail {
+  run: RunSummary;
+  stages: StageResult[];
+  llm: LlmUsage;
+  errors: Record<string, unknown>[];
+}
+
 export interface Costs {
   month: string;
   cost_eur: number;

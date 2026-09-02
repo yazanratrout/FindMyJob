@@ -9,7 +9,7 @@ from findmyjob.pipelines.normalize import NormalizePipeline
 from findmyjob.pipelines.orchestrator import Orchestrator
 from findmyjob.services.companies import add_company
 
-pytestmark = pytest.mark.usefixtures("seeded_session")
+pytestmark = [pytest.mark.usefixtures("seeded_session"), pytest.mark.slow]
 
 
 def _job(

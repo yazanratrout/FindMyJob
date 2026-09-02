@@ -80,8 +80,10 @@ All code and tooling run **inside `./.venv`**. Secrets live only in `.env`
 |--------|-----------|---------|
 | `just dev` | `.venv/bin/python -m uvicorn findmyjob.api.app:app --reload` | start the API on `127.0.0.1:8000` |
 | `just run-pipeline` | `.venv/bin/python -m findmyjob pipeline run` | run the daily pipeline once |
-| `just test` | `.venv/bin/python -m pytest` | run tests |
-| `just check` | ruff + mypy + pytest | full quality gate (run before committing) |
+| `just test` | `pytest -m "not slow"` | fast tests (~125) |
+| `just test-all` | `pytest` | the whole suite incl. slow integration tests |
+| `just check` | ruff + mypy + `test-all` | full quality gate (run before committing) |
+| `just backup` / `just prune` | `findmyjob maintenance …` | one-off SQLite backup / retention prune |
 | `just doctor` | `.venv/bin/python -m findmyjob doctor` | verify the installation |
 | `just db-upgrade` | `.venv/bin/python -m findmyjob db upgrade` | apply migrations |
 | `just db-revision "msg"` | `.venv/bin/python -m alembic revision --autogenerate -m msg` | new migration after a model change |
