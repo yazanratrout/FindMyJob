@@ -30,8 +30,19 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         upgrade_to_head()
     with session_scope() as session:
         seed(session)
+
+    scheduler = None
+    if settings.app_env != "test" and not settings.disable_scheduler:
+        from findmyjob.scheduler import get_scheduler
+
+        scheduler = get_scheduler()
+        scheduler.start()
+        log.info("api.scheduler_started", next_fire=str(scheduler.next_run_time()))
+
     log.info("api.startup", env=settings.app_env)
     yield
+    if scheduler is not None:
+        scheduler.shutdown()
     log.info("api.shutdown")
 
 

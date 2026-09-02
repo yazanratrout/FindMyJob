@@ -4,13 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP12 — Milestone 3 complete
-**Resume from:** CP13 — Scheduler. Add `findmyjob/scheduler.py` (APScheduler
-`CronTrigger` from `AppSettings.run_time` + `run_timezone`, `misfire_grace_time`
-+ `coalesce`, re-register on settings change) started from the API lifespan;
-`deploy/com.findmyjob.daily.plist` + `com.findmyjob.server.plist`; a `findmyjob
-schedule status` CLI command; README launchd instructions. Then CP14 (cost
-controls — budget stop mid-run, `services/cost.py`, `GET /api/costs`).
+**Last updated:** end of CP13
+**Resume from:** CP14 — Cost controls. Add `services/cost.py`
+(`current_month_cost_eur`, `remaining_budget`, price table already in Settings),
+enforce it in `analyze` and `judge`: before each LLM batch, if the budget would
+be exceeded set `run.budget_exhausted=True`, stop, leave the rest for the next
+run (bump a stat). Add `GET /api/costs` (month-to-date EUR, per-purpose
+breakdown, projection). `llm/client.current_month_cost_eur` already exists —
+move/extend it into `services/cost.py`.
 
 ---
 
@@ -31,7 +32,7 @@ controls — budget stop mid-run, `services/cost.py`, `GET /api/costs`).
 | CP10 | Scoring engine | ✅ done |
 | CP11 | Judge, blend, decision, documents | ✅ done |
 | CP12 | Pipeline orchestrator (wire it all) | ✅ done |
-| CP13 | Scheduler | ⬜ todo |
+| CP13 | Scheduler | ✅ done |
 | CP14 | Cost controls | ⬜ todo (client-side accounting partly done in CP3) |
 | CP15 | Frontend scaffold, auth, API client | ⬜ todo |
 | CP16 | Onboarding wizard UI | ⬜ todo |
@@ -45,7 +46,7 @@ controls — budget stop mid-run, `services/cost.py`, `GET /api/costs`).
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete**.
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) in progress** (CP13 done).
 
 ---
 
@@ -83,18 +84,20 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
   `llm/analyzer`, `llm/judge`.
 - **Runs API + background trigger** (`services/runs`, `/api/runs*`): list,
   detail (stages + LLM usage), `POST` to trigger, SSE progress stream.
+- **Scheduler** (`scheduler.py`): in-process APScheduler daily run from settings,
+  reschedules live; launchd fallback in `deploy/`. `findmyjob schedule status`.
 - **API** (`api/`): `/api/health`, `/api/documents*`, `/api/profile*`,
   `/api/settings*`, `/api/semester-terms*`, `/api/companies*`, `/api/runs*`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: ~138 passing (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: ~142 passing (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- No web UI yet (CP15+); no scheduler (CP13) — the pipeline runs only via
-  `findmyjob pipeline run` or `POST /api/runs`.
-- No cover-letter generation yet (CP19).
+- No web UI yet (CP15+); no cover-letter generation yet (CP19).
+- Cost budget is not yet *enforced* (CP14) — `analyze`/`judge` run to their
+  per-run caps regardless of month-to-date spend.
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.
 - Image/scanned-PDF documents are stored but not OCR'd (CP3 vision fallback

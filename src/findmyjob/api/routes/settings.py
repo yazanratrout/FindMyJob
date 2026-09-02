@@ -32,11 +32,16 @@ def read_settings(session: Session = Depends(get_session)) -> SettingsRead:
 
 @router.put("/settings", response_model=SettingsRead)
 def write_settings(patch: SettingsUpdate, session: Session = Depends(get_session)) -> SettingsRead:
+    changes = patch.model_dump(exclude_unset=True)
     try:
-        row = update_app_settings(session, patch.model_dump(exclude_unset=True))
+        row = update_app_settings(session, changes)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     session.commit()
+    if changes.keys() & {"run_time", "run_timezone"}:
+        from findmyjob.scheduler import maybe_reschedule
+
+        maybe_reschedule()
     return settings_read(row)
 
 

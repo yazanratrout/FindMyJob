@@ -5,6 +5,20 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP13 — Scheduler
+- `findmyjob/scheduler.py`: `PipelineScheduler` (APScheduler `AsyncIOScheduler`
+  with a `CronTrigger` from `AppSettings.run_time` / `run_timezone`,
+  `misfire_grace_time=3600`, `coalesce`, `max_instances=1`). Started from the API
+  lifespan (skipped in tests and when `APP_DISABLE_SCHEDULER=true`); a settings
+  change to `run_time`/`run_timezone` reschedules it live (`maybe_reschedule`).
+- `next_fire_time()` — compute the next run without a live scheduler (CLI).
+- CLI: `findmyjob schedule status`.
+- `deploy/*.plist.template` + `deploy/install-launchd.sh` + `just install-launchd`
+  / `uninstall-launchd` — independent launchd fallback (daily + optional server).
+- README scheduling section.
+- 4 new tests; ruff + mypy clean. No new dependencies (APScheduler already
+  declared; `apscheduler.*` added to the mypy ignore-missing-imports list).
+
 ### CP12 — Pipeline orchestrator wired + runs API
 - `Orchestrator.open_run()` + `execute(run_id=…)` — open a run row, execute
   later (used for background triggering).

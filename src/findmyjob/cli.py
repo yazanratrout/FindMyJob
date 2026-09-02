@@ -78,6 +78,22 @@ def cmd_pipeline_list(_args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------- schedule
+def cmd_schedule_status(_args: argparse.Namespace) -> int:
+    from findmyjob.db import session_scope
+    from findmyjob.scheduler import next_fire_time
+    from findmyjob.services.settings import get_app_settings
+
+    with session_scope() as session:
+        settings = get_app_settings(session)
+        run_time, run_tz = settings.run_time, settings.run_timezone
+    nxt = next_fire_time(run_time, run_tz)
+    print(f"Daily run:   {run_time} {run_tz}")
+    print(f"Next fire:   {nxt.isoformat() if nxt else 'n/a'}")
+    print("Note: the in-process scheduler runs only while the API server is up.")
+    return 0
+
+
 # ------------------------------------------------------------------------ doctor
 def cmd_doctor(_args: argparse.Namespace) -> int:
     from findmyjob.services.doctor import run_doctor
@@ -122,6 +138,13 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--no-llm", action="store_true", help="skip analyze + judge")
     run.set_defaults(func=cmd_pipeline_run)
     pipe.add_parser("list", help="list registered pipelines").set_defaults(func=cmd_pipeline_list)
+
+    schedule = sub.add_parser("schedule", help="scheduling info").add_subparsers(
+        dest="schedule_command", required=True
+    )
+    schedule.add_parser("status", help="show the configured daily run + next fire").set_defaults(
+        func=cmd_schedule_status
+    )
 
     sub.add_parser("doctor", help="check the installation").set_defaults(func=cmd_doctor)
     sub.add_parser("shell", help="interactive Python shell").set_defaults(func=cmd_shell)

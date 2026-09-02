@@ -81,3 +81,18 @@ check: lint typecheck test
 
 doctor:
     {{py}} -m findmyjob doctor
+
+schedule-status:
+    {{py}} -m findmyjob schedule status
+
+# ---- macOS deployment ------------------------------------------------
+
+# Install the launchd daily-fallback job (add `--server` to also keep the API up).
+install-launchd *ARGS:
+    bash deploy/install-launchd.sh {{ARGS}}
+
+uninstall-launchd:
+    -launchctl unload ~/Library/LaunchAgents/com.findmyjob.daily.plist
+    -launchctl unload ~/Library/LaunchAgents/com.findmyjob.server.plist
+    -rm -f ~/Library/LaunchAgents/com.findmyjob.daily.plist ~/Library/LaunchAgents/com.findmyjob.server.plist
+    @echo "launchd jobs removed"

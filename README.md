@@ -79,6 +79,19 @@ All code and tooling run **inside `./.venv`**. Secrets live only in `.env`
 | `just db-revision "msg"` | `.venv/bin/python -m alembic revision --autogenerate -m msg` | new migration after a model change |
 | `just db-reset` | `.venv/bin/python -m findmyjob db reset` | drop & re-seed (destructive) |
 | `just lock` | `pip freeze --exclude-editable > requirements.lock` | refresh the lock file |
+| `just schedule-status` | `.venv/bin/python -m findmyjob schedule status` | show the daily run time + next fire |
+| `just install-launchd` | renders + loads the launchd fallback job | keep the daily run going when the server is down |
+
+## Scheduling
+
+While the API server runs, an in-process scheduler fires the full pipeline every
+day at the time set in Settings (`run_time` / `run_timezone`, default
+`10:00 Europe/Berlin`); a missed run (laptop asleep) fires once on wake within a
+1-hour grace window. Changing the time in the UI reschedules it live.
+
+For a run even when the server is down, install the independent `launchd`
+fallback (`just install-launchd`, add `--server` to also keep the API up). The
+pipeline is idempotent, so a double run costs almost nothing.
 
 ## Repository layout
 

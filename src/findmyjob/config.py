@@ -34,6 +34,7 @@ class Settings(BaseSettings):
     database_url_override: str | None = Field(default=None, alias="APP_DATABASE_URL")
     host: str = Field(default="127.0.0.1", alias="APP_HOST")
     port: int = Field(default=8000, alias="APP_PORT")
+    disable_scheduler: bool = Field(default=False, alias="APP_DISABLE_SCHEDULER")
 
     # ---- LLM -------------------------------------------------------------
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
