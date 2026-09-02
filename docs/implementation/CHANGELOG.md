@@ -5,6 +5,20 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP7 — Normalization & enrichment
+- `pipelines/normalize` (non-critical): links each job to a `company` row by
+  normalized name, creating an inactive `origin=discovered` company when new;
+  backfills `normalized_title`; sets `is_remote` from location text.
+  `services/jobs.resolve_company`.
+- `pipelines/enrich` (non-critical): for active jobs with thin `jd_text`,
+  fetches the posting URL (robots-aware, rate-limited), extracts main content
+  with `trafilatura` and merges `JobPosting` JSON-LD; marks 403/404/410 links
+  `lifecycle=dead`. `services/enrich.enrich_url`.
+- `FetchPipeline` / `EnrichPipeline` take an injectable `http_factory` for tests.
+- Both registered in `pipelines/registry` after `fetch`.
+- 7 new tests; ruff + mypy clean. No new dependencies (`trafilatura` already
+  declared).
+
 ### CP6 — ATS connectors + company registry
 - `sources/ats/`: Greenhouse, Lever, Personio (XML), SmartRecruiters, Ashby —
   each fans out over `CompanyRef`s with a matching `ats_type`, maps to `RawJob`,

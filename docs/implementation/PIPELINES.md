@@ -56,8 +56,8 @@ Registered so far: **`fetch`** (CP5). The rest are added per checkpoint.
 | Pipeline | Module | CP | Critical | Status | Purpose |
 |----------|--------|----|----------|--------|---------|
 | `fetch` | `pipelines/fetch.py` | CP5 | yes | ✅ | Query allowlisted sources → `RawJob`s → `job` rows |
-| `normalize` | `pipelines/normalize.py` | CP7 | no | ⬜ | Canonical shape, company resolution |
-| `enrich` | `pipelines/enrich.py` | CP7 | no | ⬜ | Fetch full JD (robots-aware), JSON-LD merge |
+| `normalize` | `pipelines/normalize.py` | CP7 | no | ✅ | Company resolution, title/remote tidy-up |
+| `enrich` | `pipelines/enrich.py` | CP7 | no | ✅ | Fetch full JD (robots-aware), JSON-LD merge |
 | `dedup` | `pipelines/dedup.py` | CP8 | no | ⬜ | Exact / canonical-key / embedding dedup |
 | `prefilter` | `pipelines/prefilter.py` | CP10 | no | ⬜ | Deterministic hard filters before any LLM |
 | `analyze` | `pipelines/analyze.py` | CP9 | no | ⬜ | LLM structured extraction (cached) |
@@ -85,5 +85,24 @@ Registered so far: **`fetch`** (CP5). The rest are added per checkpoint.
   returns `PARTIAL`, never aborts the run. Only an unexpected crash → `FAILED`
   (and, being critical, that aborts the run).
 
-Later pipelines pick up from `job`: `normalize` resolves companies, `enrich`
-fills missing descriptions, `dedup` links duplicates.
+### `normalize` (CP7)
+
+- **In:** jobs with `company_id IS NULL`.
+- **Out:** `company_id` set (matching a registry row by normalized name, or a
+  new inactive `origin=discovered` company); `normalized_title` backfilled;
+  `is_remote` inferred from `location_raw`.
+- **Stats:** `linked`, `companies_discovered`.
+- Deterministic, no network. Idempotent (only touches unlinked jobs).
+
+### `enrich` (CP7)
+
+- **In:** active jobs whose `jd_text` is missing or under 400 chars (capped at
+  200 per run).
+- **Out:** `jd_text` + `jd_content_hash` replaced when the fetched content is
+  longer; `lifecycle=dead` on 403/404/410.
+- **How:** robots.txt-gated fetch via `HttpClient` → `trafilatura` main-content
+  extraction + `JobPosting` JSON-LD merge (`services/enrich.enrich_url`).
+- **Stats:** `fetched`, `enriched`, `dead`, `robots_blocked`.
+- `EnrichPipeline(http_factory=…)` is injectable for tests.
+
+`dedup` (CP8) links duplicates next.

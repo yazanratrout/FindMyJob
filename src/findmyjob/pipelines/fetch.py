@@ -6,6 +6,7 @@ A single source failing is contained (recorded, other sources continue).
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import ClassVar
 
 from findmyjob.config import get_settings
@@ -21,6 +22,9 @@ class FetchPipeline(Pipeline):
     name: ClassVar[str] = "fetch"
     critical: ClassVar[bool] = True
 
+    def __init__(self, http_factory: Callable[[], HttpClient] | None = None) -> None:
+        self._http_factory = http_factory or HttpClient
+
     async def run(self, ctx: PipelineContext) -> PipelineResult:
         res = self.result()
         query = build_source_query(ctx.app_settings)
@@ -29,7 +33,7 @@ class FetchPipeline(Pipeline):
         with ctx.session() as session:
             companies = company_refs(session)
 
-        async with HttpClient() as http:
+        async with self._http_factory() as http:
             sources = build_sources(get_settings(), ctx.app_settings, http, companies)
             res.stats["sources_active"] = len(sources)
             if not sources:

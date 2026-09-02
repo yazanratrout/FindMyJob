@@ -4,14 +4,16 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP6
-**Resume from:** CP7 — Normalization & enrichment. Add two pipelines:
-`normalize` (resolve `job.company_id` against `company` by normalized name,
-creating `origin=discovered` rows; fill `location_resolved`/geo) and `enrich`
-(for jobs with thin `jd_text`, fetch the posting URL robots-aware via
-`services/http` + `trafilatura`, merge any `JobPosting` JSON-LD; mark dead URLs
-`lifecycle=dead`). Register both in `pipelines/registry` after `fetch`. Reuse
-`sources/robots.RobotsCache` and `sources/jsonld.extract_job_postings`.
+**Last updated:** end of CP7
+**Resume from:** CP8 — Deduplication. Add `services/embeddings.py` (lazy
+`fastembed` model, `data/models/` cache) and a `dedup` pipeline: tier 1 exact
+`(source_key, source_job_id)` (already handled at fetch — skip), tier 2 canonical
+key `normalized_company|normalized_title|city` → link duplicates via
+`job.canonical_job_id`, tier 3 embedding cosine ≥ 0.92 against recent canonical
+jobs of the same company. Reposts: a canonical job last seen > `repost_days` ago
+that reappears is treated as new. Store vectors in `job_embedding`. Register
+after `enrich`. Consider gating embeddings behind a settings flag / making the
+model download part of `just setup`.
 
 ---
 
@@ -26,7 +28,7 @@ creating `origin=discovered` rows; fill `location_resolved`/geo) and `enrich`
 | CP4 | Settings & onboarding backend | ✅ done |
 | CP5 | Source framework + API connectors | ✅ done |
 | CP6 | ATS connectors + company registry | ✅ done |
-| CP7 | Normalization & enrichment | ⬜ todo |
+| CP7 | Normalization & enrichment | ✅ done |
 | CP8 | Deduplication | ⬜ todo |
 | CP9 | LLM job analyzer | ⬜ todo |
 | CP10 | Scoring engine | ⬜ todo |
@@ -46,7 +48,7 @@ creating `origin=discovered` rows; fill `location_resolved`/geo) and `enrich`
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) in progress** (CP5, CP6 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) in progress** (CP5–CP7 done).
 
 ---
 
@@ -61,7 +63,7 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) in progress** (CP5, 
   cover_letter, eligibility_entry, app_auth.
 - **Pipeline framework** (`pipelines/`): `Pipeline`, `PipelineContext`,
   `PipelineResult`, `Orchestrator` (crash-isolated, timed, stat roll-up,
-  critical-abort). Registered pipelines: `fetch` (CP5).
+  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich`.
 - **Job sources** (`sources/`): shared rate-limited/retrying `HttpClient`;
   `JobSource` contract; API connectors (Bundesagentur für Arbeit, Adzuna,
   Arbeitnow, The Muse); ATS connectors (Greenhouse, Lever, Personio,

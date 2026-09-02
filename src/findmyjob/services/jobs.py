@@ -7,8 +7,10 @@ import hashlib
 from sqlmodel import Session, col, select
 
 from findmyjob.models.base import utcnow
+from findmyjob.models.config import Company
+from findmyjob.models.enums import AtsType, CompanyOrigin
 from findmyjob.models.job import Job
-from findmyjob.normalize import normalize_title
+from findmyjob.normalize import normalize_company_name, normalize_title
 from findmyjob.sources.base import RawJob
 
 
@@ -70,3 +72,28 @@ def store_raw_job(session: Session, raw: RawJob, *, run_id: int) -> tuple[Job, b
     session.add(job)
     session.flush()
     return job, True
+
+
+def resolve_company(session: Session, raw_name: str) -> tuple[Company | None, bool]:
+    """Match a raw company name to a `company` row, creating a discovered one if new.
+
+    Returns ``(company, created)``. Discovered companies are ``is_active=False``
+    so connectors never try to query them.
+    """
+    name = (raw_name or "").strip()
+    key = normalize_company_name(name)
+    if not key:
+        return None, False
+    existing = session.exec(select(Company).where(col(Company.normalized_name) == key)).first()
+    if existing is not None:
+        return existing, False
+    company = Company(
+        name=name,
+        normalized_name=key,
+        ats_type=AtsType.NONE,
+        origin=CompanyOrigin.DISCOVERED,
+        is_active=False,
+    )
+    session.add(company)
+    session.flush()
+    return company, True
