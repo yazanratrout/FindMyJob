@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import shutil
 import sys
 from dataclasses import dataclass
 
@@ -16,19 +17,27 @@ class Check:
     name: str
     ok: bool
     detail: str
+    #: a failed warn-check prints WARN and does not fail `doctor`
+    warn: bool = False
 
 
 def _python_version() -> Check:
     v = sys.version_info
-    ok = (v.major, v.minor) >= (3, 12)
-    return Check("python >= 3.12", ok, f"{v.major}.{v.minor}.{v.micro}")
+    return Check("python >= 3.12", (v.major, v.minor) >= (3, 12), f"{v.major}.{v.minor}.{v.micro}")
+
+
+def _node() -> Check:
+    node = shutil.which("node")
+    return Check("node available", bool(node), node or "needed to build the web UI", warn=True)
 
 
 def _env_file() -> Check:
     path = REPO_ROOT / ".env"
-    if path.exists():
-        return Check(".env present", True, str(path))
-    return Check(".env present", False, "copy .env.example to .env")
+    return Check(
+        ".env present",
+        path.exists(),
+        str(path) if path.exists() else "copy .env.example to .env",
+    )
 
 
 def _data_dirs() -> Check:
@@ -52,9 +61,54 @@ def _database() -> Check:
         return Check("database reachable", False, str(exc))
 
 
+def _migrations() -> Check:
+    try:
+        import logging
+
+        from alembic.runtime.migration import MigrationContext
+        from alembic.script import ScriptDirectory
+
+        from findmyjob.db_migrate import alembic_config
+
+        logging.getLogger("alembic").setLevel(logging.WARNING)
+
+        cfg = alembic_config()
+        head = ScriptDirectory.from_config(cfg).get_current_head()
+        with get_engine().connect() as conn:
+            current = MigrationContext.configure(conn).get_current_revision()
+        at_head = current == head
+        detail = str(head) if at_head else f"current={current} head={head} — run `just db-upgrade`"
+        return Check("migrations at head", at_head, detail)
+    except Exception as exc:
+        return Check("migrations at head", False, str(exc))
+
+
 def _anthropic_key() -> Check:
     key = get_settings().anthropic_api_key
     return Check("ANTHROPIC_API_KEY set", bool(key), "required for analysis + cover letters")
+
+
+def _frontend_built() -> Check:
+    index = REPO_ROOT / "frontend" / "dist" / "index.html"
+    return Check(
+        "web UI built",
+        index.exists(),
+        str(index.parent) if index.exists() else "run `just frontend-build`",
+        warn=True,
+    )
+
+
+def _embedding_model() -> Check:
+    models_dir = get_settings().models_dir
+    cached = models_dir.exists() and any(models_dir.iterdir())
+    return Check(
+        "embedding model cached",
+        cached,
+        str(models_dir)
+        if cached
+        else "run `findmyjob models fetch` (dedup will otherwise download it)",
+        warn=True,
+    )
 
 
 def _company_seed() -> Check:
@@ -72,36 +126,44 @@ def _job_source_creds() -> Check:
     configured = [
         name
         for name, present in {
-            "ba": bool(s.ba_api_client_id and s.ba_api_client_secret),
+            "ba": True,  # public API key, no registration
             "adzuna": bool(s.adzuna_app_id and s.adzuna_app_key),
             "themuse": bool(s.themuse_api_key),
         }.items()
         if present
     ]
-    # arbeitnow + public ATS endpoints need no credentials, so we're never at zero.
     return Check(
-        "job source credentials",
+        "job sources reachable",
         True,
-        f"keyed: {', '.join(configured) or 'none'} (+ arbeitnow, ATS need no key)",
+        f"keyed: {', '.join(configured)} (+ arbeitnow, ATS need no key)",
+        warn=True,
     )
 
 
 def run_doctor() -> bool:
     checks = [
         _python_version(),
+        _node(),
         _env_file(),
         _data_dirs(),
         _database(),
+        _migrations(),
         _anthropic_key(),
+        _frontend_built(),
+        _embedding_model(),
         _company_seed(),
         _job_source_creds(),
     ]
     width = max(len(c.name) for c in checks)
-    all_ok = True
+    failed = False
     for c in checks:
-        mark = "PASS" if c.ok else "FAIL"
-        if not c.ok:
-            all_ok = False
+        if c.ok:
+            mark = "PASS"
+        elif c.warn:
+            mark = "WARN"
+        else:
+            mark = "FAIL"
+            failed = True
         print(f"  [{mark}] {c.name:<{width}}  {c.detail}")
-    print("\nAll checks passed." if all_ok else "\nSome checks failed (see above).")
-    return all_ok
+    print("\nAll checks passed." if not failed else "\nSome checks failed (see above).")
+    return not failed

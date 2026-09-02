@@ -4,13 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP23
-**Resume from:** CP24 — Packaging & macOS deployment. `just setup` already
-installs deps + migrates + seeds + builds the frontend; add: prefetch the
-`fastembed` model in `just setup` (so `dedup` doesn't download on first run),
-a richer `findmyjob doctor` (Node present? frontend built? each source key
-valid? Anthropic key reachable?), a `just start` that serves the built UI, and
-a README install walkthrough. Then CP25 (calibration).
+**Last updated:** end of CP24
+**Resume from:** CP25 — Calibration & feedback loop. Add a `job_feedback` table
+(job_id, verdict thumbs_up/down, note) + migration; `POST /api/jobs/{id}/feedback`;
+`services/calibration` — correlate each soft-score component (and the judge
+score) with positive outcomes (feedback + application status transitions),
+propose a weight set; `GET /api/calibration` + `POST /api/calibration/apply`
+(writes `settings.weights`); `findmyjob calibrate`. Frontend: thumbs on job
+cards/drawer + a calibration panel in Settings.
 
 ---
 
@@ -42,10 +43,10 @@ a README install walkthrough. Then CP25 (calibration).
 | CP21 | In-app run digests | ✅ done |
 | CP22 | Eligibility module | ✅ done |
 | CP23 | Observability, retention, backup | ✅ done |
-| CP24 | Packaging & macOS deployment | ⬜ todo |
+| CP24 | Packaging & macOS deployment | ✅ done |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) in progress** (CP21–CP23 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) complete**.
 
 ---
 
@@ -97,10 +98,10 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
   job-detail drawer, application tracker, Activity (digests + badge), Eligibility
   (conditional), **Runs list + run-detail drawer**.
 - **CLI**: `findmyjob db …`, `pipeline run|list`, `schedule status`,
-  `maintenance backup|prune`, `doctor`, `shell`.
+  `maintenance backup|prune`, `models fetch`, `doctor` (11 checks), `shell`.
 - **Maintenance**: nightly SQLite backup + weekly retention prune, scheduled and
   as CLI (`services/backup`, `services/retention`).
-- **Tests**: ~192 passing (backend; `just test` runs ~125 fast, `just test-all` all) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: ~195 passing (backend; `just test` ~128 fast, `just test-all` all) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 

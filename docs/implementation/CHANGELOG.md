@@ -5,6 +5,16 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP24 — Packaging & macOS deployment
+- `findmyjob doctor` rewritten: Python/Node, `.env`, data dir, DB, **migrations
+  at head**, `ANTHROPIC_API_KEY`, **web UI built**, **embedding model cached**,
+  company seed, source keys — with a WARN vs FAIL distinction.
+- `findmyjob models fetch` — download the `fastembed` model on demand.
+- `just setup` now also fetches the model (non-fatal), builds the UI, runs
+  `doctor`. New `just start` — migrate + serve API/UI without reload.
+- README install walkthrough + `just` table updated.
+- 3 new tests; ruff + mypy clean. No new deps.
+
 ### CP23 — Observability, retention, backup
 - `services/retention.prune`: deletes canonical jobs (+ their score/analysis/
   embedding rows) that are old (`> retention_days`), archived or dead, and not

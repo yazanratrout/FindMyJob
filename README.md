@@ -60,15 +60,23 @@ daily scheduler, and a monthly LLM-budget guard. **Next: the React web UI
 git clone <this repo> && cd FindMyJob
 cp .env.example .env          # fill in ANTHROPIC_API_KEY, optional source keys
 python3 -m venv .venv
-just setup                    # install deps, migrate, seed
+just setup                    # deps + migrate + seed + embedding model + build UI + doctor
+just start                    # API + web UI + daily scheduler on http://127.0.0.1:8000
 ```
+
+Open the URL, set a passphrase, and the onboarding wizard walks you through
+documents, profile, preferences and schedule. For a fallback daily run even when
+the server is down, `just install-launchd` (see **Scheduling**).
 
 Without `just`:
 
 ```bash
-.venv/bin/pip install -r requirements-dev.txt
-.venv/bin/pip install -e .
+.venv/bin/pip install -r requirements-dev.txt && .venv/bin/pip install -e .
 .venv/bin/python -m findmyjob db seed
+.venv/bin/python -m findmyjob models fetch          # optional: prefetch dedup model
+(cd frontend && npm install && npm run build)
+.venv/bin/python -m findmyjob doctor
+.venv/bin/python -m uvicorn findmyjob.api.app:app --host 127.0.0.1 --port 8000
 ```
 
 All code and tooling run **inside `./.venv`**. Secrets live only in `.env`
@@ -78,7 +86,8 @@ All code and tooling run **inside `./.venv`**. Secrets live only in `.env`
 
 | `just` | equivalent | purpose |
 |--------|-----------|---------|
-| `just dev` | `.venv/bin/python -m uvicorn findmyjob.api.app:app --reload` | start the API on `127.0.0.1:8000` |
+| `just start` | migrate + `uvicorn` (no reload) | serve the API + built UI + scheduler |
+| `just dev` | `uvicorn … --reload` | dev API (pair with `just frontend-dev`) |
 | `just run-pipeline` | `.venv/bin/python -m findmyjob pipeline run` | run the daily pipeline once |
 | `just test` | `pytest -m "not slow"` | fast tests (~125) |
 | `just test-all` | `pytest` | the whole suite incl. slow integration tests |

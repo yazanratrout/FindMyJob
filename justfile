@@ -21,8 +21,10 @@ setup:
     {{pip}} install -e .
     {{py}} -m findmyjob db upgrade
     {{py}} -m findmyjob db seed
+    -{{py}} -m findmyjob models fetch
     cd frontend && npm install && npm run build
-    @echo "Setup complete. Run 'just dev' (API) + 'just frontend-dev' (UI)."
+    {{py}} -m findmyjob doctor
+    @echo "Setup complete. Run 'just start' (or 'just dev' + 'just frontend-dev')."
 
 # Freeze the currently installed packages into requirements.lock
 lock:
@@ -30,7 +32,12 @@ lock:
 
 # ---- Run -------------------------------------------------------------------
 
-# Start the API server (serves the built frontend too, if present).
+# Production-ish: migrate, then serve the API + built UI (no reload, scheduler on).
+start:
+    {{py}} -m findmyjob db upgrade
+    {{py}} -m uvicorn findmyjob.api.app:app --host ${APP_HOST:-127.0.0.1} --port ${APP_PORT:-8000}
+
+# Dev API server with autoreload (serves the built frontend too, if present).
 dev:
     {{py}} -m uvicorn findmyjob.api.app:app --reload --host ${APP_HOST:-127.0.0.1} --port ${APP_PORT:-8000}
 

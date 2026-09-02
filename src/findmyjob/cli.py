@@ -113,6 +113,18 @@ def cmd_maintenance_prune(_args: argparse.Namespace) -> int:
     return 0
 
 
+# ---------------------------------------------------------------------- models
+def cmd_models_fetch(_args: argparse.Namespace) -> int:
+    from findmyjob.services.embeddings import get_embedder
+
+    embedder = get_embedder()
+    if embedder is None:
+        print("Could not load the embedding model (offline?). Dedup will retry later.")
+        return 1
+    print(f"Embedding model ready: {embedder.model_version} ({embedder.dim} dims)")
+    return 0
+
+
 # ------------------------------------------------------------------------ doctor
 def cmd_doctor(_args: argparse.Namespace) -> int:
     from findmyjob.services.doctor import run_doctor
@@ -173,6 +185,13 @@ def build_parser() -> argparse.ArgumentParser:
     )
     maint.add_parser("prune", help="delete old archived unreferenced jobs").set_defaults(
         func=cmd_maintenance_prune
+    )
+
+    models = sub.add_parser("models", help="local model management").add_subparsers(
+        dest="models_command", required=True
+    )
+    models.add_parser("fetch", help="download the embedding model now").set_defaults(
+        func=cmd_models_fetch
     )
 
     sub.add_parser("doctor", help="check the installation").set_defaults(func=cmd_doctor)
