@@ -5,6 +5,24 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP16 — Onboarding wizard UI
+- `frontend/src/api/types.ts` + expanded `hooks.ts`: documents (upload/list/
+  delete), profile (get/update/parse/skills), settings (get/update/suggest-
+  keywords), semester terms.
+- `frontend/src/onboarding/steps.tsx`: 8 step panels — Documents, Profile
+  (parse + edit + locked-field hints), Where & what, Keywords (LLM suggest →
+  move to allow/block), Limits (hours/language/contract + hard toggles,
+  thresholds, weight sliders), Schedule & alerts (run time, notifications,
+  cover-letter prefs, source toggles), Eligibility (non-EU day tracker toggle +
+  lecture terms), Review.
+- `onboarding/Wizard.tsx`: stepper with a shared settings draft; each step
+  persists via `PUT /api/settings`; finish sets `onboarding_completed` and
+  triggers the first run. `App.tsx` shows the wizard until onboarding is done.
+- `pages/SettingsPage.tsx`: the same step panels stacked, re-editable any time.
+- shared form controls (`components/form.tsx`): `Field`, `Select`, `Checkbox`,
+  `TagInput`, `ChipToggle`.
+- `tsc` + `vite build` clean. No new dependencies.
+
 ### CP15 — Frontend scaffold + auth
 - **Backend auth**: `services/auth` (Argon2 via `argon2-cffi`, rehash-on-verify),
   `api/deps` (`require_auth`, session helpers), `api/routes/auth`

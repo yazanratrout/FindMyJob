@@ -4,14 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP15
-**Resume from:** CP16 — Onboarding wizard UI. A React stepper: (1) upload
-documents, (2) review parsed profile, (3) where & what, (4) keyword
-allow/block (with `POST /api/settings/suggest-keywords`), (5) limits + weight
-sliders, (6) schedule & alerts, (7) eligibility, (8) review + "run first search".
-Every step is also reachable from Settings. Backend endpoints already exist
-(`/api/profile*`, `/api/documents*`, `/api/settings*`, `/api/semester-terms*`);
-set `onboarding_completed` when done and gate the app on it.
+**Last updated:** end of CP16
+**Resume from:** CP17 — Dashboard UI (the job list). New backend endpoint(s):
+`GET /api/jobs?bucket=recommended|maybe|all&…` returning ranked jobs with their
+latest `JobScore` (final_score, decision, top strengths/missing, company,
+location, hours, salary, age, source, "new since last run"). Frontend: replace
+the Dashboard placeholder with ranked cards (desc by final_score), bucket +
+source + search filters, a "new" badge. Add `schemas/job.py` + `services/jobs`
+read helpers + `api/routes/jobs.py`.
 
 ---
 
@@ -35,7 +35,7 @@ set `onboarding_completed` when done and gate the app on it.
 | CP13 | Scheduler | ✅ done |
 | CP14 | Cost controls | ✅ done |
 | CP15 | Frontend scaffold, auth, API client | ✅ done |
-| CP16 | Onboarding wizard UI | ⬜ todo |
+| CP16 | Onboarding wizard UI | ✅ done |
 | CP17 | Dashboard UI | ⬜ todo |
 | CP18 | Job detail UI | ⬜ todo |
 | CP19 | Cover letter generation + DOCX | ⬜ todo |
@@ -46,7 +46,7 @@ set `onboarding_completed` when done and gate the app on it.
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) started** (CP15 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) in progress** (CP15, CP16 done).
 
 ---
 
@@ -93,8 +93,8 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
 - **API** (`api/`): `/api/{health,auth,documents,profile,settings,semester-terms,
   companies,runs,costs}`.
 - **Frontend** (`frontend/`): Vite + React + TS + Tailwind + TanStack Query;
-  auth gate + setup/login screens + sidebar shell; placeholder Dashboard/Runs
-  pages. `just frontend-dev` (5173, proxies /api).
+  auth gate, 8-step onboarding wizard (gates the app on `onboarding_completed`),
+  re-editable Settings page, placeholder Dashboard/Runs. `just frontend-dev`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
 - **Tests**: ~156 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
@@ -102,8 +102,8 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- Web UI is scaffold-only: onboarding wizard (CP16), dashboard job list (CP17),
-  job detail (CP18), cover letters (CP19), tracker (CP20) still to build.
+- Web UI: dashboard job list (CP17), job detail (CP18), cover letters (CP19),
+  tracker (CP20) still to build. No frontend tests yet (CP23).
 - No application tracker / eligibility module / notifications yet (CP20-CP22).
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.
