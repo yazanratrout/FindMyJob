@@ -29,9 +29,11 @@ drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
 ## Status
 
-Early build — **Milestones 1–4 complete (CP0–CP14): the whole backend runs end
-to end, on a schedule, within a budget.** `findmyjob pipeline run` (or
-`POST /api/runs`, or the daily scheduler) executes:
+Early build — **Milestones 1–4 complete + web UI started (CP0–CP15).** The whole
+backend runs end to end, on a schedule, within a budget; the React app has
+passphrase auth and a shell (dashboard / runs) with feature pages landing in
+CP16–CP20. `findmyjob pipeline run` (or `POST /api/runs`, or the daily
+scheduler) executes:
 `fetch` (Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse + the public ATS
 boards of curated employers) → `normalize` → `enrich` (robots-aware) → `dedup`
 (canonical-key + local embeddings) → `prefilter` (cheap hard filters) →
@@ -45,7 +47,7 @@ daily scheduler, and a monthly LLM-budget guard. **Next: the React web UI
 ## Requirements
 
 - Python 3.12+ (3.13 recommended)
-- Node 20+ (only once the frontend lands, CP15)
+- Node 20+ (for the web UI)
 - [`just`](https://github.com/casey/just) — optional (`brew install just`)
 
 ## Setup

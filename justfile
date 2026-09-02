@@ -21,7 +21,8 @@ setup:
     {{pip}} install -e .
     {{py}} -m findmyjob db upgrade
     {{py}} -m findmyjob db seed
-    @echo "Setup complete. Run 'just dev' to start the API."
+    cd frontend && npm install && npm run build
+    @echo "Setup complete. Run 'just dev' (API) + 'just frontend-dev' (UI)."
 
 # Freeze the currently installed packages into requirements.lock
 lock:
@@ -32,6 +33,19 @@ lock:
 # Start the API server (serves the built frontend too, if present).
 dev:
     {{py}} -m uvicorn findmyjob.api.app:app --reload --host ${APP_HOST:-127.0.0.1} --port ${APP_PORT:-8000}
+
+# ---- Frontend ------------------------------------------------------------
+
+frontend-install:
+    cd frontend && npm install
+
+# Vite dev server on :5173, proxying /api to the backend.
+frontend-dev:
+    cd frontend && npm run dev
+
+# Type-check + build into frontend/dist (served by the API in production).
+frontend-build:
+    cd frontend && npm run build
 
 # Run the full daily pipeline once, now.
 run-pipeline *ARGS:

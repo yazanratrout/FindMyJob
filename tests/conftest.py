@@ -57,10 +57,21 @@ def seeded_session(db_session: Session) -> Session:
 
 
 @pytest.fixture
-def client() -> Iterator[object]:
+def unauth_client() -> Iterator[object]:
+    """A test client with no session (for auth-flow tests)."""
     from fastapi.testclient import TestClient
 
     from findmyjob.api.app import create_app
 
     with TestClient(create_app()) as test_client:
         yield test_client
+
+
+@pytest.fixture
+def client(unauth_client: object) -> object:
+    """An authenticated test client (passphrase set + logged in)."""
+    resp = unauth_client.post(  # type: ignore[attr-defined]
+        "/api/auth/setup", json={"passphrase": "test-passphrase-123"}
+    )
+    assert resp.status_code == 201, resp.text
+    return unauth_client

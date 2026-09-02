@@ -5,9 +5,10 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.sessions import SessionMiddleware
 
 from findmyjob import __version__
 from findmyjob.config import REPO_ROOT, get_settings
@@ -57,6 +58,13 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    app.add_middleware(
+        SessionMiddleware,
+        secret_key=settings.secret_key,
+        same_site="lax",
+        https_only=settings.is_production,
+    )
+
     if not settings.is_production:
         app.add_middleware(
             CORSMiddleware,
@@ -66,16 +74,28 @@ def create_app() -> FastAPI:
             allow_headers=["*"],
         )
 
-    from findmyjob.api.routes import companies, costs, documents, health, profile, runs
+    from findmyjob.api.deps import require_auth
+    from findmyjob.api.routes import (
+        auth,
+        companies,
+        costs,
+        documents,
+        health,
+        profile,
+        runs,
+    )
     from findmyjob.api.routes import settings as settings_routes
 
     app.include_router(health.router, prefix="/api")
-    app.include_router(documents.router, prefix="/api")
-    app.include_router(profile.router, prefix="/api")
-    app.include_router(settings_routes.router, prefix="/api")
-    app.include_router(companies.router, prefix="/api")
-    app.include_router(runs.router, prefix="/api")
-    app.include_router(costs.router, prefix="/api")
+    app.include_router(auth.router, prefix="/api")
+
+    guarded = [Depends(require_auth)]
+    app.include_router(documents.router, prefix="/api", dependencies=guarded)
+    app.include_router(profile.router, prefix="/api", dependencies=guarded)
+    app.include_router(settings_routes.router, prefix="/api", dependencies=guarded)
+    app.include_router(companies.router, prefix="/api", dependencies=guarded)
+    app.include_router(runs.router, prefix="/api", dependencies=guarded)
+    app.include_router(costs.router, prefix="/api", dependencies=guarded)
 
     frontend_dist = REPO_ROOT / "frontend" / "dist"
     if frontend_dist.is_dir():

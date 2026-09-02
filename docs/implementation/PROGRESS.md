@@ -4,13 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP14 — Milestone 4 complete
-**Resume from:** CP15 — Frontend scaffold, auth, API client. First-run passphrase
-screen -> `app_auth` row (Argon2, `argon2-cffi` is already a dep); signed session
-cookie; all `/api/*` except `/health` gated. `frontend/` = Vite + React + TS +
-Tailwind + shadcn/ui + TanStack Query + React Router. `api/client.ts` + query
-hooks. App shell with sidebar (Dashboard, Tracker, Runs, Settings). Build to
-`backend/static` (or `frontend/dist`, which `api/app.py` already mounts).
+**Last updated:** end of CP15
+**Resume from:** CP16 — Onboarding wizard UI. A React stepper: (1) upload
+documents, (2) review parsed profile, (3) where & what, (4) keyword
+allow/block (with `POST /api/settings/suggest-keywords`), (5) limits + weight
+sliders, (6) schedule & alerts, (7) eligibility, (8) review + "run first search".
+Every step is also reachable from Settings. Backend endpoints already exist
+(`/api/profile*`, `/api/documents*`, `/api/settings*`, `/api/semester-terms*`);
+set `onboarding_completed` when done and gate the app on it.
 
 ---
 
@@ -33,7 +34,7 @@ hooks. App shell with sidebar (Dashboard, Tracker, Runs, Settings). Build to
 | CP12 | Pipeline orchestrator (wire it all) | ✅ done |
 | CP13 | Scheduler | ✅ done |
 | CP14 | Cost controls | ✅ done |
-| CP15 | Frontend scaffold, auth, API client | ⬜ todo |
+| CP15 | Frontend scaffold, auth, API client | ✅ done |
 | CP16 | Onboarding wizard UI | ⬜ todo |
 | CP17 | Dashboard UI | ⬜ todo |
 | CP18 | Job detail UI | ⬜ todo |
@@ -45,7 +46,7 @@ hooks. App shell with sidebar (Dashboard, Tracker, Runs, Settings). Build to
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete**.
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) started** (CP15 done).
 
 ---
 
@@ -87,17 +88,22 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
   reschedules live; launchd fallback in `deploy/`. `findmyjob schedule status`.
 - **Cost controls** (`services/cost`, `/api/costs`): month-to-date spend,
   per-purpose breakdown, monthly-budget guard that stops `analyze`/`judge`.
-- **API** (`api/`): `/api/health`, `/api/documents*`, `/api/profile*`,
-  `/api/settings*`, `/api/semester-terms*`, `/api/companies*`, `/api/runs*`,
-  `/api/costs`.
+- **Auth** (`services/auth`, `api/deps`, `/api/auth/*`): Argon2 passphrase,
+  signed session cookie; all `/api/*` except `health` + `auth` are guarded.
+- **API** (`api/`): `/api/{health,auth,documents,profile,settings,semester-terms,
+  companies,runs,costs}`.
+- **Frontend** (`frontend/`): Vite + React + TS + Tailwind + TanStack Query;
+  auth gate + setup/login screens + sidebar shell; placeholder Dashboard/Runs
+  pages. `just frontend-dev` (5173, proxies /api).
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: ~150 passing (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: ~156 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- No web UI yet (CP15+); no cover-letter generation yet (CP19).
+- Web UI is scaffold-only: onboarding wizard (CP16), dashboard job list (CP17),
+  job detail (CP18), cover letters (CP19), tracker (CP20) still to build.
 - No application tracker / eligibility module / notifications yet (CP20-CP22).
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.

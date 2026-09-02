@@ -5,6 +5,23 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP15 — Frontend scaffold + auth
+- **Backend auth**: `services/auth` (Argon2 via `argon2-cffi`, rehash-on-verify),
+  `api/deps` (`require_auth`, session helpers), `api/routes/auth`
+  (`GET /api/auth/status`, `POST /api/auth/{setup,login,logout}`).
+  `SessionMiddleware` (signed cookie). Every `/api/*` router except `health` and
+  `auth` is behind `require_auth`. Tests: `client` fixture authenticates;
+  `unauth_client` for the auth flow.
+- **Frontend** (`frontend/`): Vite + React 18 + TypeScript + Tailwind v4 +
+  TanStack Query + React Router. `api/client.ts` + `api/hooks.ts`, minimal UI
+  primitives, `Layout` (sidebar), `App` (auth gate → setup/login screens →
+  routed shell). Placeholder Dashboard (health / spend / last run + "Run
+  pipeline now") and Runs pages; Tracker/Settings stubs.
+- `just frontend-{install,dev,build}`; `just setup` now builds the frontend;
+  `api/app.py` serves `frontend/dist` at `/`.
+- 6 new backend tests; ruff + mypy clean; frontend `tsc` + `vite build` clean.
+  No new Python deps.
+
 ### CP14 — Cost controls
 - `services/cost`: `current_month_cost_eur` (moved from `llm/client`),
   `remaining_budget_eur`, `budget_ok`, `mark_budget_exhausted`, `month_to_date`
