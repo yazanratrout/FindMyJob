@@ -135,6 +135,25 @@ export interface SemesterTerm {
   lecture_end: string;
 }
 
+export interface EligibilityGauge {
+  enabled: boolean;
+  applies: boolean;
+  year: number;
+  days_used: number;
+  limit_full_days: number;
+  remaining: number;
+}
+
+export interface EligibilityEntry {
+  id: number;
+  period_start: string;
+  period_end: string;
+  day_type: "full" | "half";
+  day_count: number;
+  job_id: number | null;
+  note: string;
+}
+
 export interface ParseResult {
   profile: Profile;
   tokens_in: number;

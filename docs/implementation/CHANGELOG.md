@@ -5,6 +5,23 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP22 — Eligibility module (optional)
+- `services/eligibility` (behind `eligibility_module_enabled`): `days_used`
+  (non-EU 140/280 working-day ledger, clipped to the calendar year, half-days
+  weighted 0.5), `gauge`, ledger CRUD (`add_entry` / `list_entries` /
+  `delete_entry`), and `disqualifiers(job, analysis)` →
+  `eligibility:non_eu_days_exhausted` / `eligibility:enrolment_ending`
+  (within 60 days) / `eligibility:over_20h_in_term` (Werkstudent > 20 h during a
+  lecture period).
+- `score` pipeline merges eligibility disqualifiers into `hard_failures` when
+  the module is on (stat `hard_failed_eligibility`).
+- API: `GET /api/eligibility` (gauge), `GET/POST/DELETE /api/eligibility/entries`.
+- Frontend: **Eligibility page** — working-day gauge + disclaimer, ledger table
+  with add form, lecture-period editor; a conditional sidebar item shown only
+  when the module is enabled.
+- 9 new backend tests; ruff + mypy clean; `vite build` clean. No new deps, no
+  migration (the `eligibility_entry` table has existed since CP1).
+
 ### CP21 — In-app run digests (no external notifications)
 - Per the project owner's request, **no email / Telegram** — the digest lives in
   the web UI only.

@@ -4,14 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP21
-**Resume from:** CP22 — Eligibility module (behind `eligibility_module_enabled`).
-`services/eligibility`: the 20h-during-lecture-period rule (uses
-`semester_term` + `is_in_lecture_period`), the enrolment-horizon check
-(`enrollment_valid_until` / `expected_graduation` vs likely start), and the
-non-EU 140/280-day ledger (`eligibility_entry` table exists) with a gauge.
-Wire flags into `prefilter` (hard) / `score` (penalty). API + a small
-Eligibility page. Then CP23 (observability/retention/backup), CP24 (packaging).
+**Last updated:** end of CP22
+**Resume from:** CP23 — Observability, retention, backup. Run-detail API/page
+(per-stage timings/stats/errors already in `pipeline_run`); rotating logs are
+done — add a weekly retention job (delete archived jobs + analyses older than
+`retention_days`, keep anything tied to an application/cover-letter) and a
+nightly `sqlite3 .backup` to `data/backups/` (keep 14). Also split the test
+suite into fast/slow markers — it's ~10 min now (trafilatura import + per-test
+DB reset). Then CP24 (macOS packaging), CP25 (calibration).
 
 ---
 
@@ -41,12 +41,12 @@ Eligibility page. Then CP23 (observability/retention/backup), CP24 (packaging).
 | CP19 | Cover letter generation + DOCX | ✅ done |
 | CP20 | Application tracker | ✅ done |
 | CP21 | In-app run digests | ✅ done |
-| CP22 | Eligibility module | ⬜ todo |
+| CP22 | Eligibility module | ✅ done |
 | CP23 | Observability, retention, backup | ⬜ todo |
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) started** (CP21 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) in progress** (CP21, CP22 done).
 
 ---
 
@@ -93,19 +93,19 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
 - **Auth** (`services/auth`, `api/deps`, `/api/auth/*`): Argon2 passphrase,
   signed session cookie; all `/api/*` except `health` + `auth` are guarded.
 - **API** (`api/`): `/api/{health,auth,documents,profile,settings,semester-terms,
-  companies,runs,costs,jobs,cover-letters,applications,digests}`.
+  companies,runs,costs,jobs,cover-letters,applications,digests,eligibility}`.
 - **Frontend** (`frontend/`): auth, onboarding wizard, Settings, ranked dashboard,
-  job-detail drawer (score bars, documents, cover letters, status), application
-  tracker, **Activity page** (per-run digests + unseen badge), Runs list.
+  job-detail drawer, application tracker, Activity page (digests + badge),
+  **Eligibility page** (conditional), Runs list.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: ~180 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: ~189 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- No eligibility module / observability / packaging yet (CP22-CP24).
-  No frontend tests yet (CP23).
+- No observability job / packaging yet (CP23-CP24). No frontend tests yet.
+- Full test suite ~10 min — split into fast/slow markers in CP23.
 - No application tracker / eligibility module / notifications yet (CP20-CP22).
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.

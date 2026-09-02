@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { useLogout, useUnseenDigestCount } from "@/api/hooks";
+import { useLogout, useSettings, useUnseenDigestCount } from "@/api/hooks";
 import { cn } from "@/lib/cn";
 import { Button } from "./ui";
 
@@ -15,13 +15,17 @@ const NAV: { to: string; label: string; end?: boolean; badgeKey?: string }[] = [
 export function Layout({ children }: { children: ReactNode }) {
   const logout = useLogout();
   const unseen = useUnseenDigestCount();
+  const settings = useSettings();
+  const nav = settings.data?.eligibility_module_enabled
+    ? [...NAV.slice(0, 3), { to: "/eligibility", label: "Eligibility" }, ...NAV.slice(3)]
+    : NAV;
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto flex max-w-6xl gap-6 p-6">
         <aside className="w-48 shrink-0">
           <div className="mb-6 text-lg font-bold">FindMyJob</div>
           <nav className="flex flex-col gap-1">
-            {NAV.map((item) => (
+            {nav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

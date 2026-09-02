@@ -6,6 +6,7 @@ import { Spinner } from "@/components/ui";
 import { OnboardingWizard } from "@/onboarding/Wizard";
 import { ActivityPage } from "@/pages/ActivityPage";
 import { DashboardPage } from "@/pages/DashboardPage";
+import { EligibilityPage } from "@/pages/EligibilityPage";
 import { RunsPage } from "@/pages/RunsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
 import { TrackerPage } from "@/pages/TrackerPage";
@@ -29,6 +30,7 @@ function AuthedApp() {
       <Routes>
         <Route path="/" element={<DashboardPage />} />
         <Route path="/activity" element={<ActivityPage />} />
+        <Route path="/eligibility" element={<EligibilityPage />} />
         <Route path="/runs" element={<RunsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/tracker" element={<TrackerPage />} />

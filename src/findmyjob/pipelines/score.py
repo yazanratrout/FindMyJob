@@ -17,6 +17,7 @@ from findmyjob.models.job import Job, JobScore
 from findmyjob.pipelines.base import Pipeline, PipelineResult
 from findmyjob.pipelines.context import PipelineContext
 from findmyjob.services.analyze import current_analysis
+from findmyjob.services.eligibility import disqualifiers as eligibility_disqualifiers
 from findmyjob.services.jobscore import (
     company_affinity,
     profile_language_levels,
@@ -56,12 +57,19 @@ class ScorePipeline(Pipeline):
                         continue
 
                     hard = analysis_hard_checks(analysis, languages, settings)
-                    if not hard.passed:
+                    elig = eligibility_disqualifiers(session, job, analysis)
+                    if not hard.passed or elig:
                         score.hard_pass = False
-                        score.hard_failures = [*score.hard_failures, *hard.failures]
+                        score.hard_failures = [
+                            *score.hard_failures,
+                            *hard.failures,
+                            *elig,
+                        ]
                         score.decision = Decision.ARCHIVED
                         session.add(score)
                         res.bump("hard_failed_analysis")
+                        if elig:
+                            res.bump("hard_failed_eligibility")
                         continue
 
                     soft = compute_soft_score(

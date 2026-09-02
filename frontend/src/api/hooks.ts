@@ -10,6 +10,8 @@ import type {
   Digest,
   DocumentRead,
   DocumentType,
+  EligibilityEntry,
+  EligibilityGauge,
   Health,
   JobDetail,
   JobList,
@@ -329,5 +331,45 @@ export function useMarkDigestsSeen() {
   return useMutation({
     mutationFn: () => api.post<void>("/digests/seen"),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["digests"] }),
+  });
+}
+
+// ---- eligibility --------------------------------------------
+export function useEligibilityGauge() {
+  return useQuery({
+    queryKey: ["eligibility"],
+    queryFn: () => api.get<EligibilityGauge>("/eligibility"),
+  });
+}
+
+export function useEligibilityEntries() {
+  return useQuery({
+    queryKey: ["eligibility", "entries"],
+    queryFn: () => api.get<EligibilityEntry[]>("/eligibility/entries"),
+  });
+}
+
+function invalidateEligibility(qc: ReturnType<typeof useQueryClient>) {
+  qc.invalidateQueries({ queryKey: ["eligibility"] });
+}
+
+export function useAddEligibilityEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (body: {
+      period_start: string;
+      period_end: string;
+      day_type: "full" | "half";
+      note: string;
+    }) => api.post<EligibilityEntry>("/eligibility/entries", body),
+    onSuccess: () => invalidateEligibility(qc),
+  });
+}
+
+export function useDeleteEligibilityEntry() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api.del<void>(`/eligibility/entries/${id}`),
+    onSuccess: () => invalidateEligibility(qc),
   });
 }

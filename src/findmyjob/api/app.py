@@ -83,6 +83,7 @@ def create_app() -> FastAPI:
         cover_letters,
         digests,
         documents,
+        eligibility,
         health,
         jobs,
         profile,
@@ -104,6 +105,7 @@ def create_app() -> FastAPI:
     app.include_router(cover_letters.router, prefix="/api", dependencies=guarded)
     app.include_router(applications.router, prefix="/api", dependencies=guarded)
     app.include_router(digests.router, prefix="/api", dependencies=guarded)
+    app.include_router(eligibility.router, prefix="/api", dependencies=guarded)
 
     frontend_dist = REPO_ROOT / "frontend" / "dist"
     if frontend_dist.is_dir():
