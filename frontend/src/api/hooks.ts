@@ -6,6 +6,8 @@ import type {
   DocumentRead,
   DocumentType,
   Health,
+  JobDetail,
+  JobList,
   KeywordSuggestions,
   ParseResult,
   Profile,
@@ -186,5 +188,32 @@ export function useDeleteTerm() {
   return useMutation({
     mutationFn: (id: number) => api.del<void>(`/semester-terms/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: keys.terms }),
+  });
+}
+
+// ---- jobs ---------------------------------------------------------
+export interface JobFilters {
+  bucket?: string;
+  source?: string;
+  search?: string;
+}
+
+export function useJobs(filters: JobFilters) {
+  const params = new URLSearchParams();
+  if (filters.bucket) params.set("bucket", filters.bucket);
+  if (filters.source) params.set("source", filters.source);
+  if (filters.search) params.set("search", filters.search);
+  const qs = params.toString();
+  return useQuery({
+    queryKey: ["jobs", filters],
+    queryFn: () => api.get<JobList>(`/jobs${qs ? `?${qs}` : ""}`),
+  });
+}
+
+export function useJobDetail(id: number | null) {
+  return useQuery({
+    queryKey: ["job", id],
+    queryFn: () => api.get<JobDetail>(`/jobs/${id}`),
+    enabled: id != null,
   });
 }

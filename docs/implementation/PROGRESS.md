@@ -4,14 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP16
-**Resume from:** CP17 — Dashboard UI (the job list). New backend endpoint(s):
-`GET /api/jobs?bucket=recommended|maybe|all&…` returning ranked jobs with their
-latest `JobScore` (final_score, decision, top strengths/missing, company,
-location, hours, salary, age, source, "new since last run"). Frontend: replace
-the Dashboard placeholder with ranked cards (desc by final_score), bucket +
-source + search filters, a "new" badge. Add `schemas/job.py` + `services/jobs`
-read helpers + `api/routes/jobs.py`.
+**Last updated:** end of CP18
+**Resume from:** CP19 — Cover letter generation + DOCX. Backend: `llm/cover_letter.py`
+(prompt + result schema: subject, recipient, salutation, paragraphs[],
+closing, claims_used[]), `docx/template.docx` (DIN 5008) + `docx/render.py`
+(docxtpl), `models` for `cover_letter` already exist; `api/routes/cover_letters.py`
+(POST /api/jobs/{id}/cover-letter, PUT /api/cover-letters/{id},
+POST .../regenerate, GET .../docx). Frontend: enable the drawer's "Prepare cover
+letter" button → editor page with the claims_used verification table + Download.
 
 ---
 
@@ -36,8 +36,8 @@ read helpers + `api/routes/jobs.py`.
 | CP14 | Cost controls | ✅ done |
 | CP15 | Frontend scaffold, auth, API client | ✅ done |
 | CP16 | Onboarding wizard UI | ✅ done |
-| CP17 | Dashboard UI | ⬜ todo |
-| CP18 | Job detail UI | ⬜ todo |
+| CP17 | Dashboard UI | ✅ done |
+| CP18 | Job detail UI | ✅ done |
 | CP19 | Cover letter generation + DOCX | ⬜ todo |
 | CP20 | Application tracker | ⬜ todo |
 | CP21 | Notifications (digest) | ⬜ todo |
@@ -46,7 +46,7 @@ read helpers + `api/routes/jobs.py`.
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) in progress** (CP15, CP16 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) in progress** (CP15–CP18 done).
 
 ---
 
@@ -91,19 +91,19 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
 - **Auth** (`services/auth`, `api/deps`, `/api/auth/*`): Argon2 passphrase,
   signed session cookie; all `/api/*` except `health` + `auth` are guarded.
 - **API** (`api/`): `/api/{health,auth,documents,profile,settings,semester-terms,
-  companies,runs,costs}`.
-- **Frontend** (`frontend/`): Vite + React + TS + Tailwind + TanStack Query;
-  auth gate, 8-step onboarding wizard (gates the app on `onboarding_completed`),
-  re-editable Settings page, placeholder Dashboard/Runs. `just frontend-dev`.
+  companies,runs,costs,jobs}`.
+- **Frontend** (`frontend/`): auth gate, 8-step onboarding wizard, re-editable
+  Settings, **ranked job dashboard + job-detail drawer** (score bars, assessment,
+  documents checklist, JD text), Runs list. `just frontend-dev`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: ~156 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: ~163 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- Web UI: dashboard job list (CP17), job detail (CP18), cover letters (CP19),
-  tracker (CP20) still to build. No frontend tests yet (CP23).
+- Web UI: cover letters (CP19), tracker (CP20) still to build. Cover-letter
+  button in the drawer is disabled. No frontend tests yet (CP23).
 - No application tracker / eligibility module / notifications yet (CP20-CP22).
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.

@@ -161,3 +161,54 @@ export interface Costs {
   projected_month_end_eur: number;
   calls: number;
 }
+
+export interface JobCard {
+  id: number;
+  title: string;
+  company: string;
+  location: string | null;
+  is_remote: boolean;
+  source: string;
+  url: string;
+  apply_url: string | null;
+  posted_at: string | null;
+  is_new: boolean;
+  final_score: number;
+  soft_score: number;
+  llm_holistic: number | null;
+  decision: "recommended" | "maybe" | "archived";
+  strengths: string[];
+  missing: string[];
+  weekly_hours: number | null;
+  salary: string | null;
+  contract_type: string | null;
+}
+
+export interface JobList {
+  jobs: JobCard[];
+  counts: Record<string, number>;
+}
+
+export interface ScoreComponent {
+  raw: number;
+  weight: number;
+  contribution: number;
+}
+
+export interface DocumentNeed {
+  doc_type: string;
+  necessity: "required" | "likely" | "optional";
+  reason: string;
+  have: boolean;
+}
+
+export interface JobDetail extends JobCard {
+  jd_text: string | null;
+  company_url: string | null;
+  hard_pass: boolean;
+  hard_failures: string[];
+  rationale: string;
+  soft_breakdown: Record<string, ScoreComponent>;
+  documents_needed: DocumentNeed[];
+  analysis: Record<string, unknown> | null;
+}

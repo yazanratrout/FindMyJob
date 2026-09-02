@@ -1,11 +1,87 @@
-import { useCosts, useHealth, useRuns, useTriggerRun } from "@/api/hooks";
+import { useMemo, useState } from "react";
+import {
+  useCosts,
+  useHealth,
+  useJobs,
+  useRuns,
+  useTriggerRun,
+} from "@/api/hooks";
+import type { JobCard as JobCardT } from "@/api/types";
+import { JobDetailDrawer } from "@/components/JobDetailDrawer";
 import { Button, Card, ErrorBox, Spinner } from "@/components/ui";
+import { Input } from "@/components/ui";
+import { cn } from "@/lib/cn";
+
+const BUCKETS = [
+  { key: "recommended", label: "Recommended" },
+  { key: "maybe", label: "Maybe" },
+  { key: "all", label: "All" },
+];
+
+function ScoreRing({ value }: { value: number }) {
+  const color =
+    value >= 70 ? "bg-green-600" : value >= 50 ? "bg-amber-500" : "bg-slate-400";
+  return (
+    <div
+      className={cn(
+        "flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white",
+        color,
+      )}
+    >
+      {Math.round(value)}
+    </div>
+  );
+}
+
+function JobRow({ job, onOpen }: { job: JobCardT; onOpen: () => void }) {
+  return (
+    <button
+      onClick={onOpen}
+      className="flex w-full items-start gap-3 rounded-lg border border-slate-200 bg-white p-4 text-left hover:border-slate-300"
+    >
+      <ScoreRing value={job.final_score} />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="truncate font-semibold">{job.title}</span>
+          {job.is_new && (
+            <span className="rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+              NEW
+            </span>
+          )}
+        </div>
+        <div className="text-sm text-slate-500">
+          {job.company}
+          {job.location && ` · ${job.location}`}
+          {job.weekly_hours && ` · ${job.weekly_hours}h/wk`}
+          {job.salary && ` · ${job.salary}`}
+          {` · ${job.source}`}
+        </div>
+        {job.strengths.length > 0 && (
+          <div className="mt-1 text-xs text-green-700">
+            + {job.strengths.join(" · ")}
+          </div>
+        )}
+        {job.missing.length > 0 && (
+          <div className="text-xs text-amber-700">− {job.missing[0]}</div>
+        )}
+      </div>
+    </button>
+  );
+}
 
 export function DashboardPage() {
   const health = useHealth();
   const runs = useRuns();
   const costs = useCosts();
   const trigger = useTriggerRun();
+
+  const [bucket, setBucket] = useState("recommended");
+  const [search, setSearch] = useState("");
+  const [openId, setOpenId] = useState<number | null>(null);
+
+  const jobs = useJobs({ bucket, search: search.trim() || undefined });
+  const counts = jobs.data?.counts ?? {};
+  const list = useMemo(() => jobs.data?.jobs ?? [], [jobs.data]);
 
   return (
     <div className="space-y-6">
@@ -18,49 +94,73 @@ export function DashboardPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card title="Backend">
-          {health.isLoading ? (
-            <Spinner />
-          ) : health.data ? (
-            <p className="text-sm">
-              {health.data.status} · v{health.data.version} · db{" "}
-              {health.data.db_ok ? "ok" : "down"}
-            </p>
-          ) : (
-            <ErrorBox message="unreachable" />
-          )}
+          <p className="text-sm">
+            {health.data
+              ? `${health.data.status} · v${health.data.version}`
+              : "…"}
+          </p>
         </Card>
         <Card title="LLM spend (month)">
-          {costs.data ? (
-            <p className="text-sm">
-              €{costs.data.cost_eur.toFixed(2)} / €{costs.data.budget_eur.toFixed(2)}
-              <span className="block text-slate-400">
-                projected €{costs.data.projected_month_end_eur.toFixed(2)}
-              </span>
-            </p>
-          ) : (
-            <Spinner />
-          )}
+          <p className="text-sm">
+            {costs.data
+              ? `€${costs.data.cost_eur.toFixed(2)} / €${costs.data.budget_eur.toFixed(2)}`
+              : "…"}
+          </p>
         </Card>
         <Card title="Last run">
-          {runs.data && runs.data.length > 0 ? (
-            <p className="text-sm">
-              #{runs.data[0].id} · {runs.data[0].status}
-              <span className="block text-slate-400">
-                {new Date(runs.data[0].started_at).toLocaleString()}
-              </span>
-            </p>
-          ) : (
-            <p className="text-sm text-slate-400">no runs yet</p>
-          )}
+          <p className="text-sm">
+            {runs.data?.[0]
+              ? `#${runs.data[0].id} · ${runs.data[0].status}`
+              : "no runs yet"}
+          </p>
         </Card>
       </div>
 
-      <Card title="Recommended jobs">
-        <p className="text-sm text-slate-500">
-          The ranked job list arrives in CP17. For now, run the pipeline and check
-          the Runs page.
-        </p>
-      </Card>
+      <div className="flex flex-wrap items-center gap-2">
+        {BUCKETS.map((b) => (
+          <button
+            key={b.key}
+            onClick={() => setBucket(b.key)}
+            className={cn(
+              "rounded-full px-3 py-1 text-sm font-medium",
+              bucket === b.key
+                ? "bg-slate-900 text-white"
+                : "bg-slate-100 text-slate-600",
+            )}
+          >
+            {b.label}
+            {counts[b.key === "all" ? "recommended" : b.key] != null &&
+              b.key !== "all" &&
+              ` (${counts[b.key] ?? 0})`}
+          </button>
+        ))}
+        <Input
+          placeholder="Search title / company…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="ml-auto max-w-xs"
+        />
+      </div>
+
+      {jobs.isLoading ? (
+        <Spinner />
+      ) : jobs.error ? (
+        <ErrorBox message="Could not load jobs" />
+      ) : list.length === 0 ? (
+        <Card>
+          <p className="text-sm text-slate-500">
+            Nothing here yet. Run the pipeline, then check back.
+          </p>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {list.map((job) => (
+            <JobRow key={job.id} job={job} onOpen={() => setOpenId(job.id)} />
+          ))}
+        </div>
+      )}
+
+      <JobDetailDrawer jobId={openId} onClose={() => setOpenId(null)} />
     </div>
   );
 }

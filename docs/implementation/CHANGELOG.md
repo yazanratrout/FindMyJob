@@ -5,6 +5,20 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP17 + CP18 — Dashboard job list + job detail
+- Backend: `services/job_read` (`list_jobs` — canonical active jobs joined to
+  their most-recent `JobScore` + analysis + company, ranked by `final_score`;
+  bucket/source/search filters; "new since last completed run"),
+  `bucket_counts`; `schemas/job` (`JobCard`, `JobDetail` with score breakdown,
+  hard failures, rationale, documents checklist, raw analysis);
+  `GET /api/jobs` + `GET /api/jobs/{id}`.
+- Frontend: `useJobs` / `useJobDetail`; Dashboard replaced with ranked job
+  rows (score ring, NEW badge, strengths/missing), bucket tabs + search;
+  `JobDetailDrawer` slide-over — apply link, score-component bars, assessment,
+  documents checklist (have / necessity / reason), full JD text. "Prepare cover
+  letter" button is present but disabled until CP19.
+- 4 new backend tests; ruff + mypy clean; `tsc` + `vite build` clean. No new deps.
+
 ### CP16 — Onboarding wizard UI
 - `frontend/src/api/types.ts` + expanded `hooks.ts`: documents (upload/list/
   delete), profile (get/update/parse/skills), settings (get/update/suggest-
