@@ -11,6 +11,7 @@ from typing import ClassVar
 from findmyjob.config import get_settings
 from findmyjob.pipelines.base import Pipeline, PipelineResult
 from findmyjob.pipelines.context import PipelineContext
+from findmyjob.services.companies import company_refs
 from findmyjob.services.http import HttpClient
 from findmyjob.services.jobs import store_raw_job
 from findmyjob.sources.registry import build_source_query, build_sources
@@ -25,8 +26,11 @@ class FetchPipeline(Pipeline):
         query = build_source_query(ctx.app_settings)
         log = ctx.bind(pipeline=self.name)
 
+        with ctx.session() as session:
+            companies = company_refs(session)
+
         async with HttpClient() as http:
-            sources = build_sources(get_settings(), ctx.app_settings, http)
+            sources = build_sources(get_settings(), ctx.app_settings, http, companies)
             res.stats["sources_active"] = len(sources)
             if not sources:
                 log.warning("fetch.no_sources")

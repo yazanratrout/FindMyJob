@@ -1,4 +1,4 @@
-"""Build the set of active job sources from settings + available credentials."""
+"""Build the set of active job sources from settings + credentials + companies."""
 
 from __future__ import annotations
 
@@ -12,12 +12,14 @@ from findmyjob.sources.api import (
     BundesagenturSource,
     TheMuseSource,
 )
-from findmyjob.sources.base import JobSource, SourceQuery
+from findmyjob.sources.ats import ATS_SOURCE_CLASSES
+from findmyjob.sources.base import CompanyRef, JobSource, SourceQuery
+from findmyjob.sources.jsonld import JsonLdSource
 
 log = get_logger("sources")
 
-# Every known source class. ATS connectors are appended in CP6.
-ALL_SOURCE_CLASSES: tuple[type[JobSource], ...] = (
+# Sources that only need process settings + http.
+_SIMPLE_SOURCE_CLASSES: tuple[type[JobSource], ...] = (
     BundesagenturSource,
     AdzunaSource,
     ArbeitnowSource,
@@ -29,17 +31,25 @@ def build_sources(
     process_settings: Settings,
     app_settings: AppSettings,
     http: HttpClient,
+    companies: list[CompanyRef] | None = None,
 ) -> list[JobSource]:
-    """Instantiate every source that is both enabled and configured."""
+    """Instantiate every source that is enabled and configured."""
+    companies = companies or []
     active: list[JobSource] = []
-    for cls in ALL_SOURCE_CLASSES:
-        if not app_settings.sources_enabled.get(cls.key, True):
-            continue
-        source = cls(process_settings, http)
+
+    def _add(source: JobSource) -> None:
+        if not app_settings.sources_enabled.get(source.key, True):
+            return
         if not source.is_configured():
-            log.info("sources.skip_unconfigured", source=cls.key)
-            continue
+            log.info("sources.skip_unconfigured", source=source.key)
+            return
         active.append(source)
+
+    for cls in _SIMPLE_SOURCE_CLASSES:
+        _add(cls(process_settings, http))
+    for cls in (*ATS_SOURCE_CLASSES, JsonLdSource):
+        _add(cls(process_settings, http, companies))
+
     return active
 
 

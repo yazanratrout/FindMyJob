@@ -36,7 +36,7 @@ _WHITESPACE = re.compile(r"\s+")
 _NON_ALNUM = re.compile(r"[^a-z0-9]+")
 
 
-def _strip_accents(text: str) -> str:
+def fold_accents(text: str) -> str:
     replacements = {"ä": "ae", "ö": "oe", "ü": "ue", "ß": "ss"}
     for src, dst in replacements.items():
         text = text.replace(src, dst).replace(src.upper(), dst)
@@ -46,7 +46,7 @@ def _strip_accents(text: str) -> str:
 
 def normalize_company_name(name: str) -> str:
     """Lowercase, de-accent, drop legal suffixes, collapse to a stable key."""
-    base = _strip_accents(name).lower().strip()
+    base = fold_accents(name).lower().strip()
     base = base.replace("&", " and ")
     for suffix in _LEGAL_SUFFIXES:
         if base.endswith(" " + suffix):
@@ -58,11 +58,11 @@ def normalize_company_name(name: str) -> str:
 def normalize_title(title: str) -> str:
     """Lowercase, de-accent, remove gender markers, collapse whitespace."""
     base = _GENDER_MARKERS.sub(" ", title)
-    base = _strip_accents(base).lower()
+    base = fold_accents(base).lower()
     base = base.replace("*", " ").replace(":", " ").replace("/", " ")
     base = _NON_ALNUM.sub(" ", base)
     return _WHITESPACE.sub(" ", base).strip()
 
 
 def slugify(text: str) -> str:
-    return _NON_ALNUM.sub("-", _strip_accents(text).lower()).strip("-")
+    return _NON_ALNUM.sub("-", fold_accents(text).lower()).strip("-")

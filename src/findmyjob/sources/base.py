@@ -18,6 +18,17 @@ from findmyjob.config import Settings
 from findmyjob.services.http import HttpClient
 
 
+class CompanyRef(BaseModel):
+    """A company the ATS connectors iterate over (decoupled from the ORM row)."""
+
+    id: int | None = None
+    name: str
+    ats_type: str = "none"
+    ats_slug: str | None = None
+    careers_url: str | None = None
+    city: str | None = None
+
+
 class SourceQuery(BaseModel):
     """What to search for — built from the user's settings."""
 

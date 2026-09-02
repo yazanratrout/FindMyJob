@@ -72,8 +72,13 @@ Registered so far: **`fetch`** (CP5). The rest are added per checkpoint.
   source enabled in `sources_enabled` and configured (credentials present).
 - **Out:** new rows in `job` (idempotent upsert by `source_key` +
   `source_job_id`); existing postings get `last_seen_at` bumped.
-- **Sources:** Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse
-  (`sources/api/`). Each is rate-limited and retried by the shared `HttpClient`.
+- **Sources:** API connectors (Bundesagentur für Arbeit, Adzuna, Arbeitnow,
+  The Muse — `sources/api/`), ATS connectors that fan out over the curated
+  company registry (Greenhouse, Lever, Personio, SmartRecruiters, Ashby —
+  `sources/ats/`), and a JSON-LD extractor for career pages with no known ATS
+  (`sources/jsonld`, robots-aware). All rate-limited/retried by `HttpClient`;
+  `build_sources` keeps only the ones enabled in `sources_enabled` and
+  configured (credentials present, or ≥1 matching company).
 - **Stats:** `sources_active`, `found`, `new`, `found.<source>`.
 - **Failure:** a source that errors is recorded (`source:<key>`) and skipped;
   a malformed posting is recorded (`job:<source>:<id>`) and skipped. The stage

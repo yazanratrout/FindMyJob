@@ -5,6 +5,22 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP6 — ATS connectors + company registry
+- `sources/ats/`: Greenhouse, Lever, Personio (XML), SmartRecruiters, Ashby —
+  each fans out over `CompanyRef`s with a matching `ats_type`, maps to `RawJob`,
+  and filters to student-suitable roles + the target city (with EN/DE city
+  aliases) + recency.
+- `sources/jsonld`: extracts schema.org `JobPosting` data from career pages of
+  companies with no known ATS; `sources/robots` gates those fetches by
+  `robots.txt`.
+- `services/companies`: CRUD, `company_refs` (queryable companies only),
+  `detect_ats` (URL pattern + HTML fallback).
+- API: `GET/POST/PUT/DELETE /api/companies`, `POST /api/companies/detect`.
+- `sources/registry.build_sources` now also builds the ATS + JSON-LD sources
+  from the company list; `pipelines/fetch` loads `company_refs` and passes them.
+- `normalize._strip_accents` → public `normalize.fold_accents`.
+- 20 new tests (83 total); ruff + mypy clean. No new dependencies.
+
 ### CP5 — Source framework + API connectors
 - `services/http.HttpClient`: shared async client — per-host min-interval rate
   limiting, retry/backoff on 429/5xx/transport errors (tenacity), stable UA.

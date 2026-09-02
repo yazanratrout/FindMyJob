@@ -4,14 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP5
-**Resume from:** CP6 — ATS connectors + company registry. Add
-`sources/ats/{greenhouse,lever,personio,smartrecruiters,ashby}.py` (each fans
-out over `company` rows with a matching `ats_type`), a `sources/jsonld.py`
-`JobPosting` extractor for unknown-ATS career pages, and company CRUD endpoints
-(`GET/POST/DELETE /api/companies`, `POST /api/companies/detect`). Append the ATS
-sources to `ALL_SOURCE_CLASSES` in `sources/registry.py`. Honour `robots.txt`
-for any HTML fetch (add a small robots cache in `services/http.py` or a helper).
+**Last updated:** end of CP6
+**Resume from:** CP7 — Normalization & enrichment. Add two pipelines:
+`normalize` (resolve `job.company_id` against `company` by normalized name,
+creating `origin=discovered` rows; fill `location_resolved`/geo) and `enrich`
+(for jobs with thin `jd_text`, fetch the posting URL robots-aware via
+`services/http` + `trafilatura`, merge any `JobPosting` JSON-LD; mark dead URLs
+`lifecycle=dead`). Register both in `pipelines/registry` after `fetch`. Reuse
+`sources/robots.RobotsCache` and `sources/jsonld.extract_job_postings`.
 
 ---
 
@@ -25,7 +25,7 @@ for any HTML fetch (add a small robots cache in `services/http.py` or a helper).
 | CP3 | Profile builder (LLM) | ✅ done |
 | CP4 | Settings & onboarding backend | ✅ done |
 | CP5 | Source framework + API connectors | ✅ done |
-| CP6 | ATS connectors + company registry | ⬜ todo |
+| CP6 | ATS connectors + company registry | ✅ done |
 | CP7 | Normalization & enrichment | ⬜ todo |
 | CP8 | Deduplication | ⬜ todo |
 | CP9 | LLM job analyzer | ⬜ todo |
@@ -46,7 +46,7 @@ for any HTML fetch (add a small robots cache in `services/http.py` or a helper).
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) started** (CP5 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) in progress** (CP5, CP6 done).
 
 ---
 
@@ -63,9 +63,13 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) started** (CP5 done)
   `PipelineResult`, `Orchestrator` (crash-isolated, timed, stat roll-up,
   critical-abort). Registered pipelines: `fetch` (CP5).
 - **Job sources** (`sources/`): shared rate-limited/retrying `HttpClient`;
-  `JobSource` contract; connectors for Bundesagentur für Arbeit, Adzuna,
-  Arbeitnow, The Muse; registry that filters by enabled + configured.
-  `fetch` pipeline persists new postings into `job` (idempotent).
+  `JobSource` contract; API connectors (Bundesagentur für Arbeit, Adzuna,
+  Arbeitnow, The Muse); ATS connectors (Greenhouse, Lever, Personio,
+  SmartRecruiters, Ashby) + a JSON-LD career-page extractor (robots-aware);
+  registry filters by enabled + configured. `fetch` pipeline persists new
+  postings into `job` (idempotent).
+- **Company registry** (`services/companies`): CRUD, ATS auto-detect,
+  `company_refs` for the connectors. API at `/api/companies*`.
 - **LLM layer** (`llm/`): `LlmClient` (tier routing, content-hash cache,
   cost/token accounting, JSON mode + one repair retry, injectable network fn),
   prompt loader, `profile_parser`.
@@ -74,10 +78,10 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) started** (CP5 done)
   `settings` (read/update/validate + geocode), `geocode` (Nominatim + cache),
   `doctor`.
 - **API** (`api/`): `/api/health`, `/api/documents*`, `/api/profile*`,
-  `/api/settings*`, `/api/semester-terms*`.
+  `/api/settings*`, `/api/semester-terms*`, `/api/companies*`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: 63 passing. `ruff` + `mypy` clean.
+- **Tests**: 83 passing. `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
