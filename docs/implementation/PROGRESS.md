@@ -4,17 +4,13 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP10
-**Resume from:** CP11 — Judge, blend, decision, documents. Add `llm/judge.py`
-+ prompt + result schema (holistic_fit 0-100, rationale, missing_qualifications,
-strengths_to_highlight, recommendation). Add a `judge` pipeline after `score`:
-only for jobs with `hard_pass` and `soft_score >= threshold_maybe - 10`; write
-`llm_holistic`/`llm_rationale`/`missing_qualifications`/`strengths_to_highlight`
-onto the run `JobScore`, set `final_score = blend_soft_ratio*soft + (1-r)*holistic`,
-re-`bucket` the decision. Then `decide` (can be folded into `judge` or its own
-pipeline): compute the documents checklist (`services/documents_needed`) from
-`job_analysis.documents_requested` + contract type + enrollment, cross-checked
-against uploaded documents.
+**Last updated:** end of CP12 — Milestone 3 complete
+**Resume from:** CP13 — Scheduler. Add `findmyjob/scheduler.py` (APScheduler
+`CronTrigger` from `AppSettings.run_time` + `run_timezone`, `misfire_grace_time`
++ `coalesce`, re-register on settings change) started from the API lifespan;
+`deploy/com.findmyjob.daily.plist` + `com.findmyjob.server.plist`; a `findmyjob
+schedule status` CLI command; README launchd instructions. Then CP14 (cost
+controls — budget stop mid-run, `services/cost.py`, `GET /api/costs`).
 
 ---
 
@@ -33,8 +29,8 @@ against uploaded documents.
 | CP8 | Deduplication | ✅ done |
 | CP9 | LLM job analyzer | ✅ done |
 | CP10 | Scoring engine | ✅ done |
-| CP11 | Judge, blend, decision, documents | ⬜ todo |
-| CP12 | Pipeline orchestrator (wire it all) | ⬜ todo |
+| CP11 | Judge, blend, decision, documents | ✅ done |
+| CP12 | Pipeline orchestrator (wire it all) | ✅ done |
 | CP13 | Scheduler | ⬜ todo |
 | CP14 | Cost controls | ⬜ todo (client-side accounting partly done in CP3) |
 | CP15 | Frontend scaffold, auth, API client | ⬜ todo |
@@ -49,7 +45,7 @@ against uploaded documents.
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) in progress** (CP9, CP10 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete**.
 
 ---
 
@@ -64,7 +60,7 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
   cover_letter, eligibility_entry, app_auth.
 - **Pipeline framework** (`pipelines/`): `Pipeline`, `PipelineContext`,
   `PipelineResult`, `Orchestrator` (crash-isolated, timed, stat roll-up,
-  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich` → `dedup` → `prefilter` → `analyze` → `score`.
+  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich` → `dedup` → `prefilter` → `analyze` → `score` → `judge` → `decide` (full sequence).
 - **Job sources** (`sources/`): shared rate-limited/retrying `HttpClient`;
   `JobSource` contract; API connectors (Bundesagentur für Arbeit, Adzuna,
   Arbeitnow, The Muse); ATS connectors (Greenhouse, Lever, Personio,
@@ -81,21 +77,24 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
   prompt loader, `profile_parser`, `keyword_suggest`, `analyzer`.
 - **Services**: `bootstrap`, `documents`, `profile`, `settings`, `geocode`,
   `semester`, `companies`, `jobs`, `enrich`, `embeddings`, `analyze`, `doctor`.
-- **Scoring pipelines**: `prefilter` (cheap hard filters), `analyze` (LLM
-  extraction into `job_analysis`), `score` (analysis hard checks + weighted soft
-  score + provisional decision into `job_score`). `services/scoring` +
-  `services/jobscore`.
+- **Intelligence pipelines**: `prefilter`, `analyze`, `score`, `judge` (LLM
+  holistic + blend), `decide` (documents checklist). `services/scoring`,
+  `services/jobscore`, `services/documents_needed`, `services/analyze`,
+  `llm/analyzer`, `llm/judge`.
+- **Runs API + background trigger** (`services/runs`, `/api/runs*`): list,
+  detail (stages + LLM usage), `POST` to trigger, SSE progress stream.
 - **API** (`api/`): `/api/health`, `/api/documents*`, `/api/profile*`,
-  `/api/settings*`, `/api/semester-terms*`, `/api/companies*`.
+  `/api/settings*`, `/api/semester-terms*`, `/api/companies*`, `/api/runs*`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: 117 passing (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: ~138 passing (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- No judge / decision / cover-letter pipelines yet (CP11); `score` sets a
-  provisional decision from the soft score, refined by `judge` in CP11.
+- No web UI yet (CP15+); no scheduler (CP13) — the pipeline runs only via
+  `findmyjob pipeline run` or `POST /api/runs`.
+- No cover-letter generation yet (CP19).
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.
 - Image/scanned-PDF documents are stored but not OCR'd (CP3 vision fallback

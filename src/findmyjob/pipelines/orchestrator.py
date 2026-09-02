@@ -43,9 +43,19 @@ class Orchestrator:
     def pipeline_names(self) -> list[str]:
         return [p.name for p in self._pipelines]
 
-    async def execute(self, *, trigger: RunTrigger = RunTrigger.MANUAL) -> int:
-        """Run the whole sequence. Returns the :class:`Run` id."""
-        run_id = self._open_run(trigger)
+    def open_run(self, trigger: RunTrigger = RunTrigger.MANUAL) -> int:
+        """Create the RUNNING :class:`Run` row and return its id (for background execution)."""
+        return self._open_run(trigger)
+
+    async def execute(
+        self, *, trigger: RunTrigger = RunTrigger.MANUAL, run_id: int | None = None
+    ) -> int:
+        """Run the whole sequence. Returns the :class:`Run` id.
+
+        Pass ``run_id`` to attach to a run already opened via :meth:`open_run`.
+        """
+        if run_id is None:
+            run_id = self._open_run(trigger)
         log = self._log.bind(run_id=run_id, trigger=trigger.value)
         log.info("run.start", pipelines=self.pipeline_names)
 

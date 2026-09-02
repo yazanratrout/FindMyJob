@@ -18,7 +18,7 @@ os.environ["APP_DATABASE_URL"] = f"sqlite:///{(_TMP_DIR / 'test.db').as_posix()}
 os.environ.setdefault("APP_SECRET_KEY", "test-secret-key")
 
 import pytest  # noqa: E402
-from sqlmodel import Session  # noqa: E402
+from sqlmodel import Session, select  # noqa: E402
 
 from findmyjob.config import reset_settings_cache  # noqa: E402
 from findmyjob.db import create_all, drop_all, get_engine, reset_engine_cache  # noqa: E402
@@ -44,7 +44,14 @@ def db_session() -> Iterator[Session]:
 
 @pytest.fixture
 def seeded_session(db_session: Session) -> Session:
+    from findmyjob.models.config import AppSettings
+
     seed(db_session)
+    # No test should hit a live job source. Tests that exercise `fetch` re-enable
+    # specific sources explicitly (and mock them with respx).
+    settings = db_session.exec(select(AppSettings)).one()
+    settings.sources_enabled = dict.fromkeys(settings.sources_enabled, False)
+    db_session.add(settings)
     db_session.commit()
     return db_session
 

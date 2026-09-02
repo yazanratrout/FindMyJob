@@ -51,8 +51,10 @@ def test_seed_refreshes_seed_companies_but_not_user_companies(db_session: Sessio
         assert still_there.origin == CompanyOrigin.USER
 
 
-def test_default_settings_have_weights_and_sources(seeded_session: Session):
-    settings = seeded_session.exec(select(AppSettings)).one()
+def test_default_settings_have_weights_and_sources(db_session: Session):
+    seed(db_session)
+    db_session.commit()
+    settings = db_session.exec(select(AppSettings)).one()
     assert abs(sum(settings.weights.values()) - 100) < 1e-6
-    assert settings.sources_enabled["ba"] is True
+    assert settings.sources_enabled["ba"] is True  # seed leaves sources on
     assert settings.target_city == "München"

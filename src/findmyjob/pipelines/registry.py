@@ -8,24 +8,25 @@ from __future__ import annotations
 
 from findmyjob.pipelines.analyze import AnalyzePipeline
 from findmyjob.pipelines.base import Pipeline
+from findmyjob.pipelines.decide import DecidePipeline
 from findmyjob.pipelines.dedup import DedupPipeline
 from findmyjob.pipelines.enrich import EnrichPipeline
 from findmyjob.pipelines.fetch import FetchPipeline
+from findmyjob.pipelines.judge import JudgePipeline
 from findmyjob.pipelines.normalize import NormalizePipeline
 from findmyjob.pipelines.orchestrator import Orchestrator
 from findmyjob.pipelines.prefilter import PrefilterPipeline
 from findmyjob.pipelines.score import ScorePipeline
 
 
-def default_pipelines() -> list[Pipeline]:
+def default_pipelines(*, fetch_only: bool = False, no_llm: bool = False) -> list[Pipeline]:
     """The daily sequence, in execution order.
 
-    Target sequence (checkpoint that adds it):
-        fetch (CP5) -> normalize (CP7) -> enrich (CP7) -> dedup (CP8)
-        -> prefilter (CP10) -> analyze (CP9) -> score (CP10) -> judge (CP11)
-        -> decide (CP11) -> notify (CP21)
+    * ``fetch_only`` — just ingest, skip everything downstream.
+    * ``no_llm`` — run the deterministic stages only (no ``analyze`` / ``judge``);
+      ``score`` still runs on whatever analyses already exist.
     """
-    return [
+    pipelines: list[Pipeline] = [
         FetchPipeline(),
         NormalizePipeline(),
         EnrichPipeline(),
@@ -33,8 +34,16 @@ def default_pipelines() -> list[Pipeline]:
         PrefilterPipeline(),
         AnalyzePipeline(),
         ScorePipeline(),
+        JudgePipeline(),
+        DecidePipeline(),
     ]
+    if fetch_only:
+        return [pipelines[0]]
+    if no_llm:
+        llm_stages = {"analyze", "judge"}
+        return [p for p in pipelines if p.name not in llm_stages]
+    return pipelines
 
 
-def build_default_orchestrator() -> Orchestrator:
-    return Orchestrator(default_pipelines())
+def build_default_orchestrator(*, fetch_only: bool = False, no_llm: bool = False) -> Orchestrator:
+    return Orchestrator(default_pipelines(fetch_only=fetch_only, no_llm=no_llm))

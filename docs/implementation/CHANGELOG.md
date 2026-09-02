@@ -5,6 +5,36 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP12 — Pipeline orchestrator wired + runs API
+- `Orchestrator.open_run()` + `execute(run_id=…)` — open a run row, execute
+  later (used for background triggering).
+- `default_pipelines(fetch_only=…, no_llm=…)` + matching CLI flags
+  (`findmyjob pipeline run --fetch-only --no-llm`).
+- `services/runs`: `list_runs`, `run_detail` (stages + LLM usage summary),
+  `start_background_run` (opens the run, runs the pipeline as an asyncio task).
+- API: `GET /api/runs`, `GET /api/runs/{id}`, `POST /api/runs` (202, background),
+  `GET /api/runs/{id}/events` (SSE progress, 1 s polling).
+- Full 9-stage sequence registered: fetch → normalize → enrich → dedup →
+  prefilter → analyze → score → judge → decide.
+- Tests disable all job sources by default (`seeded_session`) so nothing hits a
+  live API; `fetch` tests re-enable specific sources with respx.
+- 7 new tests; ruff + mypy clean. No new dependencies.
+
+### CP11 — Judge, blend, decision, documents
+- `llm/judge`: `judge_fit()` + prompt + `JudgeResult` (holistic_fit 0-100,
+  rationale, missing_qualifications, strengths_to_highlight, recommendation).
+- `services/documents_needed.compute_documents_needed`: CV always; cover letter
+  / transcript / references / portfolio from `documents_requested`; enrollment
+  cert required if the posting demands enrolment, "likely" for
+  Werkstudent/intern contracts; each entry flags whether the user has that doc.
+- `services/profile.profile_summary_text` for the judge/cover-letter prompts.
+- `pipelines/judge` (after `score`): only jobs with `hard_pass` and
+  `soft_score >= threshold_maybe - 10`; writes holistic + rationale, sets
+  `final_score = blend * soft + (1-blend) * holistic`, re-buckets `decision`.
+- `pipelines/decide` (last): attaches the documents checklist to every scored
+  job this run.
+- 7 new tests; ruff + mypy clean. No new dependencies.
+
 ### CP10 — Scoring engine
 - `services/scoring` (pure functions): `cheap_hard_checks` (recency, blocked
   keywords, location — EN/DE city aliases), `analysis_hard_checks` (hours /

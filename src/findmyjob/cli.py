@@ -58,10 +58,10 @@ def cmd_pipeline_run(args: argparse.Namespace) -> int:
     from findmyjob.models.enums import RunTrigger
     from findmyjob.pipelines.registry import build_default_orchestrator
 
-    orchestrator = build_default_orchestrator()
+    orchestrator = build_default_orchestrator(fetch_only=args.fetch_only, no_llm=args.no_llm)
     trigger = RunTrigger(args.trigger)
     run_id = asyncio.run(orchestrator.execute(trigger=trigger))
-    print(f"Run {run_id} finished. Inspect it with: findmyjob runs show {run_id}")
+    print(f"Run {run_id} finished ({', '.join(orchestrator.pipeline_names)}).")
     return 0
 
 
@@ -118,6 +118,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
     run = pipe.add_parser("run", help="run the full pipeline once")
     run.add_argument("--trigger", choices=["manual", "schedule"], default="manual")
+    run.add_argument("--fetch-only", action="store_true", help="only ingest jobs")
+    run.add_argument("--no-llm", action="store_true", help="skip analyze + judge")
     run.set_defaults(func=cmd_pipeline_run)
     pipe.add_parser("list", help="list registered pipelines").set_defaults(func=cmd_pipeline_list)
 

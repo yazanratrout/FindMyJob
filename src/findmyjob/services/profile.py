@@ -48,6 +48,36 @@ def get_profile(session: Session) -> Profile:
     return profile
 
 
+def profile_summary_text(session: Session) -> str:
+    """A compact plain-text profile for LLM prompts (judge, cover letter)."""
+    profile = get_profile(session)
+    skills = session.exec(
+        select(ProfileSkill).where(col(ProfileSkill.profile_id) == profile.id)
+    ).all()
+    tech = [s.name for s in skills if s.category != SkillCategory.LANGUAGE][:20]
+    langs = [
+        f"{s.name} ({s.evidence.replace('CEFR', '').strip() or 'B1'})"
+        for s in skills
+        if s.category == SkillCategory.LANGUAGE
+    ]
+    lines = [
+        f"Name: {profile.full_name or 'n/a'}",
+        f"Studies: {profile.program or 'n/a'} at {profile.university or 'n/a'}"
+        + (f", semester {profile.current_semester}" if profile.current_semester else ""),
+        f"Degree level: {profile.degree_level.value if profile.degree_level else 'n/a'}",
+        f"Enrolled until: {profile.enrollment_valid_until or 'n/a'}; "
+        f"expected graduation: {profile.expected_graduation or 'n/a'}",
+        f"Nationality: {profile.nationality or 'n/a'} "
+        f"(EU/EEA: {'yes' if profile.is_eu_eea else 'no'})",
+        f"Skills: {', '.join(tech) or 'n/a'}",
+        f"Languages: {', '.join(langs) or 'n/a'}",
+    ]
+    highlights = profile.structured_json.get("highlights_from_references", [])
+    if highlights:
+        lines.append("Reference highlights: " + " | ".join(highlights[:3]))
+    return "\n".join(lines)
+
+
 def collect_document_sections(session: Session) -> dict[str, str]:
     """Group uploaded document text by kind for the parser."""
     docs = session.exec(select(Document)).all()

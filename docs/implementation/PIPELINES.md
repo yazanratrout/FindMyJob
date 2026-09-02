@@ -52,7 +52,7 @@ wraps it. Add a pipeline here at the right position when its checkpoint lands.
 ## Concrete pipelines
 
 Registered: `fetch` → `normalize` → `enrich` → `dedup` → `prefilter` →
-`analyze` → `score`. `judge` / `decide` / `notify` land in later checkpoints.
+`analyze` → `score` → `judge` → `decide`. `notify` lands in CP21.
 
 | Pipeline | Module | CP | Critical | Status | Purpose |
 |----------|--------|----|----------|--------|---------|
@@ -63,8 +63,8 @@ Registered: `fetch` → `normalize` → `enrich` → `dedup` → `prefilter` →
 | `prefilter` | `pipelines/prefilter.py` | CP10 | no | ✅ | Cheap deterministic hard filters |
 | `analyze` | `pipelines/analyze.py` | CP9 | no | ✅ | LLM structured extraction (cached) |
 | `score` | `pipelines/score.py` | CP10 | no | ✅ | Analysis hard checks + weighted soft score |
-| `judge` | `pipelines/judge.py` | CP11 | no | ⬜ | LLM holistic fit, blend, decision |
-| `decide` | `pipelines/decide.py` | CP11 | no | ⬜ | Bucket + documents checklist |
+| `judge` | `pipelines/judge.py` | CP11 | no | ✅ | LLM holistic fit, blend, decision |
+| `decide` | `pipelines/decide.py` | CP11 | no | ✅ | Documents checklist |
 | `notify` | `pipelines/notify.py` | CP21 | no | ⬜ | Morning digest |
 
 ### `fetch` (CP5, critical)
@@ -153,3 +153,19 @@ Downstream pipelines (CP9+) only consider **canonical** jobs
   blends in the LLM holistic score.
 - **Stats:** `scored`, `hard_failed_analysis`, `no_analysis`,
   `decision.<bucket>`.
+
+### `judge` (CP11)
+
+- **In:** this run's `JobScore` rows with `hard_pass` and
+  `soft_score >= threshold_maybe - 10` (a clear reject isn't worth a smart call).
+- **Out:** `llm_holistic`, `llm_rationale`, `missing_qualifications`,
+  `strengths_to_highlight`; `final_score = blend*soft + (1-blend)*holistic`;
+  `decision` re-bucketed. `llm/judge.judge_fit` (smart model).
+- **Stats:** `judged`, `cache_hits`, `decision.<bucket>`.
+
+### `decide` (CP11)
+
+- **In:** every `JobScore` this run with an analysis.
+- **Out:** `documents_needed` — a checklist (`doc_type`, `necessity`
+  required/likely/optional, `reason`, `have`) from
+  `services/documents_needed.compute_documents_needed`. Deterministic.
