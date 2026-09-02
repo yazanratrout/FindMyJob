@@ -29,16 +29,16 @@ drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
 ## Status
 
-Early build — **Milestones 1 & 2 complete (CP0–CP8).** Working today:
-configuration, database + migrations, the pipeline framework and orchestrator,
-the LLM client (cache + cost accounting), document upload + text extraction, LLM
-CV parsing into a structured profile, the settings / onboarding backend, the
-company registry, and the full **job-ingestion pipeline**:
+Early build — **Milestones 1–3 complete (CP0–CP12): the whole backend pipeline
+runs end to end.** `findmyjob pipeline run` (or `POST /api/runs`) executes:
 `fetch` (Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse + the public ATS
-boards of curated employers) → `normalize` (company resolution) → `enrich`
-(full-description fetch, robots-aware) → `dedup` (canonical-key + local-embedding
-deduplication). Next: the analysis, scoring and cover-letter pipelines (CP9–CP11),
-then the web UI. See [`PROGRESS.md`](docs/implementation/PROGRESS.md).
+boards of curated employers) → `normalize` → `enrich` (robots-aware) → `dedup`
+(canonical-key + local embeddings) → `prefilter` (cheap hard filters) →
+`analyze` (LLM extraction) → `score` (hard checks + weighted soft score) →
+`judge` (LLM holistic fit, blended) → `decide` (documents checklist). Plus the
+config / profile / company / settings / runs REST API. **Next: the scheduler
+(CP13), cost controls (CP14), then the React web UI (CP15+).** No UI yet — use
+the API at `/api/docs`. See [`PROGRESS.md`](docs/implementation/PROGRESS.md).
 
 ## Requirements
 
