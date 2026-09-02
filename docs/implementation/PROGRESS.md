@@ -4,14 +4,14 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP20 — Milestone 5 complete
-**Resume from:** CP21 — Notifications (digest). Backend: `services/notifications`
-(email via SMTP env vars, Telegram via bot token + chat id from settings; a
-`send(subject, markdown, html)` interface); a `notify` pipeline (last in the
-sequence) that composes a digest — run stats, top N new recommendations with
-deep links, follow-ups due, budget/error warnings — and sends it on the
-configured channels. `POST /api/notifications/test`. Then CP22 (eligibility
-module), CP23 (observability/retention/backup), CP24 (packaging).
+**Last updated:** end of CP21
+**Resume from:** CP22 — Eligibility module (behind `eligibility_module_enabled`).
+`services/eligibility`: the 20h-during-lecture-period rule (uses
+`semester_term` + `is_in_lecture_period`), the enrolment-horizon check
+(`enrollment_valid_until` / `expected_graduation` vs likely start), and the
+non-EU 140/280-day ledger (`eligibility_entry` table exists) with a gauge.
+Wire flags into `prefilter` (hard) / `score` (penalty). API + a small
+Eligibility page. Then CP23 (observability/retention/backup), CP24 (packaging).
 
 ---
 
@@ -40,13 +40,13 @@ module), CP23 (observability/retention/backup), CP24 (packaging).
 | CP18 | Job detail UI | ✅ done |
 | CP19 | Cover letter generation + DOCX | ✅ done |
 | CP20 | Application tracker | ✅ done |
-| CP21 | Notifications (digest) | ⬜ todo |
+| CP21 | In-app run digests | ✅ done |
 | CP22 | Eligibility module | ⬜ todo |
 | CP23 | Observability, retention, backup | ⬜ todo |
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete**.
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (CP9–CP12) complete** · **M4 (CP13–CP14) complete** · **M5 (CP15–CP20) complete** · **M6 (CP21–CP24) started** (CP21 done).
 
 ---
 
@@ -61,7 +61,7 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
   cover_letter, eligibility_entry, app_auth.
 - **Pipeline framework** (`pipelines/`): `Pipeline`, `PipelineContext`,
   `PipelineResult`, `Orchestrator` (crash-isolated, timed, stat roll-up,
-  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich` → `dedup` → `prefilter` → `analyze` → `score` → `judge` → `decide` (full sequence).
+  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich` → `dedup` → `prefilter` → `analyze` → `score` → `judge` → `decide` → `notify` (full sequence).
 - **Job sources** (`sources/`): shared rate-limited/retrying `HttpClient`;
   `JobSource` contract; API connectors (Bundesagentur für Arbeit, Adzuna,
   Arbeitnow, The Muse); ATS connectors (Greenhouse, Lever, Personio,
@@ -93,20 +93,19 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
 - **Auth** (`services/auth`, `api/deps`, `/api/auth/*`): Argon2 passphrase,
   signed session cookie; all `/api/*` except `health` + `auth` are guarded.
 - **API** (`api/`): `/api/{health,auth,documents,profile,settings,semester-terms,
-  companies,runs,costs,jobs,cover-letters,applications}`.
-- **Frontend** (`frontend/`): auth, onboarding wizard, Settings, ranked dashboard
-  (with follow-ups banner) + job-detail drawer (score bars, documents checklist,
-  cover-letter generate/edit/download, status control), **application tracker**
-  board, Runs list. `just frontend-dev`.
+  companies,runs,costs,jobs,cover-letters,applications,digests}`.
+- **Frontend** (`frontend/`): auth, onboarding wizard, Settings, ranked dashboard,
+  job-detail drawer (score bars, documents, cover letters, status), application
+  tracker, **Activity page** (per-run digests + unseen badge), Runs list.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: ~175 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
+- **Tests**: ~180 passing (backend) (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- No digest notifications / eligibility module / observability / packaging yet
-  (CP21-CP24). No frontend tests yet (CP23).
+- No eligibility module / observability / packaging yet (CP22-CP24).
+  No frontend tests yet (CP23).
 - No application tracker / eligibility module / notifications yet (CP20-CP22).
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.

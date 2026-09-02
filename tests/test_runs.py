@@ -31,6 +31,7 @@ def test_full_sequence_order():
         "score",
         "judge",
         "decide",
+        "notify",
     ]
 
 

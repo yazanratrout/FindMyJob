@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { useLogout } from "@/api/hooks";
+import { useLogout, useUnseenDigestCount } from "@/api/hooks";
 import { cn } from "@/lib/cn";
 import { Button } from "./ui";
 
-const NAV = [
+const NAV: { to: string; label: string; end?: boolean; badgeKey?: string }[] = [
   { to: "/", label: "Dashboard", end: true },
+  { to: "/activity", label: "Activity", badgeKey: "digests" },
   { to: "/tracker", label: "Tracker" },
   { to: "/runs", label: "Runs" },
   { to: "/settings", label: "Settings" },
@@ -13,6 +14,7 @@ const NAV = [
 
 export function Layout({ children }: { children: ReactNode }) {
   const logout = useLogout();
+  const unseen = useUnseenDigestCount();
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <div className="mx-auto flex max-w-6xl gap-6 p-6">
@@ -26,7 +28,7 @@ export function Layout({ children }: { children: ReactNode }) {
                 end={item.end}
                 className={({ isActive }) =>
                   cn(
-                    "rounded-md px-3 py-2 text-sm font-medium",
+                    "flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium",
                     isActive
                       ? "bg-slate-900 text-white"
                       : "text-slate-600 hover:bg-slate-200",
@@ -34,6 +36,12 @@ export function Layout({ children }: { children: ReactNode }) {
                 }
               >
                 {item.label}
+                {item.badgeKey === "digests" &&
+                  (unseen.data?.count ?? 0) > 0 && (
+                    <span className="rounded-full bg-blue-600 px-1.5 text-xs text-white">
+                      {unseen.data!.count}
+                    </span>
+                  )}
               </NavLink>
             ))}
           </nav>

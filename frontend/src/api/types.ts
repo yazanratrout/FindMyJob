@@ -162,6 +162,34 @@ export interface Costs {
   calls: number;
 }
 
+export interface DigestItem {
+  job_id: number;
+  title: string;
+  company: string;
+  final_score: number;
+  decision: string;
+  is_new: boolean;
+}
+
+export interface Digest {
+  id: number;
+  run_id: number;
+  run_status: string;
+  seen: boolean;
+  created_at: string;
+  summary: {
+    new_jobs: number;
+    recommended: number;
+    maybe: number;
+    archived: number;
+    follow_ups_due: number;
+    errors: number;
+    budget_exhausted: boolean;
+  };
+  items: DigestItem[];
+  warnings: string[];
+}
+
 export interface JobCard {
   id: number;
   title: string;

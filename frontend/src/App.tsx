@@ -4,6 +4,7 @@ import { LoginScreen, SetupScreen } from "@/auth/AuthScreens";
 import { Layout } from "@/components/Layout";
 import { Spinner } from "@/components/ui";
 import { OnboardingWizard } from "@/onboarding/Wizard";
+import { ActivityPage } from "@/pages/ActivityPage";
 import { DashboardPage } from "@/pages/DashboardPage";
 import { RunsPage } from "@/pages/RunsPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -27,6 +28,7 @@ function AuthedApp() {
     <Layout>
       <Routes>
         <Route path="/" element={<DashboardPage />} />
+        <Route path="/activity" element={<ActivityPage />} />
         <Route path="/runs" element={<RunsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/tracker" element={<TrackerPage />} />

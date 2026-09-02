@@ -7,6 +7,7 @@ import type {
   Costs,
   CoverLetter,
   CoverLetterContent,
+  Digest,
   DocumentRead,
   DocumentType,
   Health,
@@ -304,5 +305,29 @@ export function useUpdateApplication() {
     mutationFn: ({ id, patch }: { id: number; patch: ApplicationPatch }) =>
       api.put<Application>(`/applications/${id}`, patch),
     onSuccess: () => invalidateApplications(qc),
+  });
+}
+
+// ---- digests -------------------------------------------------
+export function useDigests() {
+  return useQuery({
+    queryKey: ["digests"],
+    queryFn: () => api.get<Digest[]>("/digests"),
+  });
+}
+
+export function useUnseenDigestCount() {
+  return useQuery({
+    queryKey: ["digests", "unseen"],
+    queryFn: () => api.get<{ count: number }>("/digests/unseen-count"),
+    refetchInterval: 30_000,
+  });
+}
+
+export function useMarkDigestsSeen() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<void>("/digests/seen"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["digests"] }),
   });
 }

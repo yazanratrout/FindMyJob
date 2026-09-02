@@ -5,6 +5,23 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP21 — In-app run digests (no external notifications)
+- Per the project owner's request, **no email / Telegram** — the digest lives in
+  the web UI only.
+- `models/digest.Digest` (per run: summary counts, top-N recommended items,
+  warnings, `seen`); migration `0b10a2aa1e04`.
+- `services/digest`: `build_digest` (idempotent per run — counts by decision,
+  new jobs, follow-ups due, budget/error warnings), `list_digests`,
+  `unseen_count`, `mark_seen` / `mark_all_seen`.
+- `pipelines/notify.NotifyPipeline` — last stage, non-critical, builds the
+  digest. Registered: `… → decide → notify`.
+- API: `GET /api/digests`, `GET /api/digests/unseen-count`,
+  `POST /api/digests/{id}/seen`, `POST /api/digests/seen`.
+- Frontend: **Activity page** (per-run cards: status, counts, warnings, top job
+  links into the drawer); sidebar "Activity" item with an unseen badge;
+  visiting the page marks digests seen.
+- 5 new backend tests; ruff + mypy clean; `vite build` clean. No new deps.
+
 ### CP20 — Application tracker
 - `services/applications`: `get_or_create`, `update_application` (status →
   auto-stamps `applied_at`; ISO date parsing for `applied_at`/`follow_up_at`;

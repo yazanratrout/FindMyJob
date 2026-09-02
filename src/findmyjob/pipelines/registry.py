@@ -14,6 +14,7 @@ from findmyjob.pipelines.enrich import EnrichPipeline
 from findmyjob.pipelines.fetch import FetchPipeline
 from findmyjob.pipelines.judge import JudgePipeline
 from findmyjob.pipelines.normalize import NormalizePipeline
+from findmyjob.pipelines.notify import NotifyPipeline
 from findmyjob.pipelines.orchestrator import Orchestrator
 from findmyjob.pipelines.prefilter import PrefilterPipeline
 from findmyjob.pipelines.score import ScorePipeline
@@ -36,6 +37,7 @@ def default_pipelines(*, fetch_only: bool = False, no_llm: bool = False) -> list
         ScorePipeline(),
         JudgePipeline(),
         DecidePipeline(),
+        NotifyPipeline(),
     ]
     if fetch_only:
         return [pipelines[0]]

@@ -29,15 +29,15 @@ drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
 ## Status
 
-**Milestones 1–5 complete (CP0–CP20): the app is end-to-end usable.** The
+**Milestones 1–5 complete + CP21 (CP0–CP21): the app is end-to-end usable.** The
 backend runs the full pipeline on a schedule within an LLM budget; the React app
 has passphrase auth, an onboarding wizard, a re-editable settings page, a ranked
 job dashboard with a detail drawer (score breakdown, assessment, documents
 checklist, original posting), **LLM cover-letter generation → editable → `.docx`
-download**, and an **application tracker** board. Remaining: digest
-notifications, the eligibility module, observability, and macOS packaging
-(CP21–24). `findmyjob pipeline run` (or `POST /api/runs`, or the daily
-scheduler) executes:
+download**, an **application tracker** board, and a per-run **Activity feed**
+(in-app only — no email/Telegram). Remaining: the eligibility module,
+observability, and macOS packaging (CP22–24). `findmyjob pipeline run` (or
+`POST /api/runs`, or the daily scheduler) executes:
 `fetch` (Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse + the public ATS
 boards of curated employers) → `normalize` → `enrich` (robots-aware) → `dedup`
 (canonical-key + local embeddings) → `prefilter` (cheap hard filters) →
