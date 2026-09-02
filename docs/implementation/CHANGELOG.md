@@ -5,6 +5,19 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP8 — Deduplication
+- `services/embeddings`: lazy local `fastembed` embedder
+  (`intfloat/multilingual-e5-small`, cached in `data/models/`); degrades to
+  `None` when unavailable so the run still works. `cosine_matrix` + blob codec.
+- `pipelines/dedup` (non-critical): tier 2 canonical key
+  (`normalized_company | normalized_title`) links later duplicates to the
+  earliest job via `job.canonical_job_id`; tier 3 embeds `title + jd_text`,
+  compares within the same company, links pairs with cosine ≥ 0.92. Vectors
+  persist in `job_embedding` and are reused across runs. Embedder is injectable
+  for tests (no model download).
+- Registered after `enrich`: fetch → normalize → enrich → dedup.
+- 5 new tests (95 total); ruff + mypy clean. No new dependencies.
+
 ### CP7 — Normalization & enrichment
 - `pipelines/normalize` (non-critical): links each job to a `company` row by
   normalized name, creating an inactive `origin=discovered` company when new;

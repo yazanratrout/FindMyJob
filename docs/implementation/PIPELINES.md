@@ -58,7 +58,7 @@ Registered so far: **`fetch`** (CP5). The rest are added per checkpoint.
 | `fetch` | `pipelines/fetch.py` | CP5 | yes | ✅ | Query allowlisted sources → `RawJob`s → `job` rows |
 | `normalize` | `pipelines/normalize.py` | CP7 | no | ✅ | Company resolution, title/remote tidy-up |
 | `enrich` | `pipelines/enrich.py` | CP7 | no | ✅ | Fetch full JD (robots-aware), JSON-LD merge |
-| `dedup` | `pipelines/dedup.py` | CP8 | no | ⬜ | Exact / canonical-key / embedding dedup |
+| `dedup` | `pipelines/dedup.py` | CP8 | no | ✅ | Canonical-key + embedding dedup |
 | `prefilter` | `pipelines/prefilter.py` | CP10 | no | ⬜ | Deterministic hard filters before any LLM |
 | `analyze` | `pipelines/analyze.py` | CP9 | no | ⬜ | LLM structured extraction (cached) |
 | `score` | `pipelines/score.py` | CP10 | no | ⬜ | Deterministic soft score + weights |
@@ -105,4 +105,17 @@ Registered so far: **`fetch`** (CP5). The rest are added per checkpoint.
 - **Stats:** `fetched`, `enriched`, `dead`, `robots_blocked`.
 - `EnrichPipeline(http_factory=…)` is injectable for tests.
 
-`dedup` (CP8) links duplicates next.
+### `dedup` (CP8)
+
+- **In:** active jobs (all runs), oldest first.
+- **Tier 2 — canonical key:** `normalized_company | normalized_title`. The
+  earliest job with a key owns it; later jobs get `canonical_job_id = owner`.
+- **Tier 3 — semantic:** embed `title + jd_text[:2000]` (`services/embeddings`,
+  local `fastembed`), compare within the same company, link pairs with cosine
+  ≥ 0.92. Vectors are stored in `job_embedding` and reused on later runs.
+  Skipped entirely (stat `semantic_skipped`) if the model can't load.
+- **Stats:** `linked_by_key`, `embedded`, `linked_by_embedding`.
+- `DedupPipeline(embedder=…)` is injectable; tests pass a fake (no download).
+
+Downstream pipelines (CP9+) only consider **canonical** jobs
+(`canonical_job_id IS NULL`).

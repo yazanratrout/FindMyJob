@@ -29,16 +29,16 @@ drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
 ## Status
 
-Early build — **Milestone 1 complete (CP0–CP4); Milestone 2 in progress (CP5–CP6
-done).** Working today: configuration, database + migrations, the pipeline
-framework and orchestrator, the LLM client (cache + cost accounting), document
-upload + text extraction, LLM CV parsing into a structured profile, the settings
-/ onboarding backend, the company registry, and the **job-ingestion pipeline** —
-a `fetch` stage that queries Bundesagentur für Arbeit, Adzuna, Arbeitnow, The
-Muse, and the public ATS boards (Greenhouse, Lever, Personio, SmartRecruiters,
-Ashby) of a curated set of employers, and stores new postings. Next:
-normalization/enrichment (CP7), dedup (CP8), then the analysis & scoring
-pipelines. No web UI yet. See [`PROGRESS.md`](docs/implementation/PROGRESS.md).
+Early build — **Milestones 1 & 2 complete (CP0–CP8).** Working today:
+configuration, database + migrations, the pipeline framework and orchestrator,
+the LLM client (cache + cost accounting), document upload + text extraction, LLM
+CV parsing into a structured profile, the settings / onboarding backend, the
+company registry, and the full **job-ingestion pipeline**:
+`fetch` (Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse + the public ATS
+boards of curated employers) → `normalize` (company resolution) → `enrich`
+(full-description fetch, robots-aware) → `dedup` (canonical-key + local-embedding
+deduplication). Next: the analysis, scoring and cover-letter pipelines (CP9–CP11),
+then the web UI. See [`PROGRESS.md`](docs/implementation/PROGRESS.md).
 
 ## Requirements
 

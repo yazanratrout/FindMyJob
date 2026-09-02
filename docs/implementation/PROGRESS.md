@@ -4,16 +4,15 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** end of CP7
-**Resume from:** CP8 — Deduplication. Add `services/embeddings.py` (lazy
-`fastembed` model, `data/models/` cache) and a `dedup` pipeline: tier 1 exact
-`(source_key, source_job_id)` (already handled at fetch — skip), tier 2 canonical
-key `normalized_company|normalized_title|city` → link duplicates via
-`job.canonical_job_id`, tier 3 embedding cosine ≥ 0.92 against recent canonical
-jobs of the same company. Reposts: a canonical job last seen > `repost_days` ago
-that reappears is treated as new. Store vectors in `job_embedding`. Register
-after `enrich`. Consider gating embeddings behind a settings flag / making the
-model download part of `just setup`.
+**Last updated:** end of CP8 — Milestone 2 complete
+**Resume from:** CP9 — LLM job analyzer. Add `llm/analyzer.py` + prompt +
+`JobAnalysis` output schema (fields already in `models/job.JobAnalysis`), with
+`analyzer_version` and provenance snippets. Add `services/analyze.py` that
+caches by `jd_content_hash` + `analyzer_version` across jobs. Then the `analyze`
+pipeline — but note CP10 `prefilter` runs *before* it in the sequence, so build
+CP10's hard-filter helper first (or stub `prefilter` and slot `analyze` after
+it). Only analyze canonical, active, non-dead jobs without a current analysis.
+Respect a per-run cap; real budget stop is CP14.
 
 ---
 
@@ -29,7 +28,7 @@ model download part of `just setup`.
 | CP5 | Source framework + API connectors | ✅ done |
 | CP6 | ATS connectors + company registry | ✅ done |
 | CP7 | Normalization & enrichment | ✅ done |
-| CP8 | Deduplication | ⬜ todo |
+| CP8 | Deduplication | ✅ done |
 | CP9 | LLM job analyzer | ⬜ todo |
 | CP10 | Scoring engine | ⬜ todo |
 | CP11 | Judge, blend, decision, documents | ⬜ todo |
@@ -48,7 +47,7 @@ model download part of `just setup`.
 | CP24 | Packaging & macOS deployment | ⬜ todo |
 | CP25 | Calibration & feedback loop | ⬜ todo |
 
-Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) in progress** (CP5–CP7 done).
+Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete**.
 
 ---
 
@@ -63,7 +62,7 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) in progress** (CP5�
   cover_letter, eligibility_entry, app_auth.
 - **Pipeline framework** (`pipelines/`): `Pipeline`, `PipelineContext`,
   `PipelineResult`, `Orchestrator` (crash-isolated, timed, stat roll-up,
-  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich`.
+  critical-abort). Registered pipelines: `fetch` → `normalize` → `enrich` → `dedup`.
 - **Job sources** (`sources/`): shared rate-limited/retrying `HttpClient`;
   `JobSource` contract; API connectors (Bundesagentur für Arbeit, Adzuna,
   Arbeitnow, The Muse); ATS connectors (Greenhouse, Lever, Personio,
@@ -72,29 +71,35 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) in progress** (CP5�
   postings into `job` (idempotent).
 - **Company registry** (`services/companies`): CRUD, ATS auto-detect,
   `company_refs` for the connectors. API at `/api/companies*`.
+- **Ingestion pipelines**: `normalize` (company resolution), `enrich` (full-JD
+  fetch, robots-aware), `dedup` (canonical-key + local-embedding tiers,
+  `services/embeddings`, vectors in `job_embedding`).
 - **LLM layer** (`llm/`): `LlmClient` (tier routing, content-hash cache,
   cost/token accounting, JSON mode + one repair retry, injectable network fn),
-  prompt loader, `profile_parser`.
-- **Services**: `bootstrap` (idempotent seed), `documents` (upload/validate/
-  extract/store), `profile` (parse-merge with locked fields, skills),
-  `settings` (read/update/validate + geocode), `geocode` (Nominatim + cache),
-  `doctor`.
+  prompt loader, `profile_parser`, `keyword_suggest`.
+- **Services**: `bootstrap`, `documents`, `profile`, `settings`, `geocode`,
+  `semester`, `companies`, `jobs`, `enrich`, `embeddings`, `doctor`.
 - **API** (`api/`): `/api/health`, `/api/documents*`, `/api/profile*`,
   `/api/settings*`, `/api/semester-terms*`, `/api/companies*`.
 - **CLI**: `findmyjob db upgrade|seed|reset`, `pipeline run|list`, `doctor`,
   `shell`.
-- **Tests**: 83 passing. `ruff` + `mypy` clean.
+- **Tests**: 95 passing (suite ~7 min; a fast marker is planned in CP23). `ruff` + `mypy` clean.
 
 ## Known gaps / deferred
 
 - No web UI yet (CP15+).
-- No job sources yet (CP5+); orchestrator runs an empty sequence.
+- No analysis / scoring / cover-letter pipelines yet (CP9–CP11); the run stops
+  after `dedup`.
 - Cost *budget enforcement* (stopping mid-run) is CP14; only per-call
   accounting exists.
-- Image/scanned-PDF documents are stored but not OCR'd (CP3 vision fallback was
-  descoped to a later pass; `parse_status = PENDING`).
-- Geocoding hits Nominatim live; respect its 1 req/s policy when CP5 wiring
-  triggers lookups in bulk (it won't — only on city change).
+- Image/scanned-PDF documents are stored but not OCR'd (CP3 vision fallback
+  deferred; `parse_status = PENDING`).
+- `dedup` embedding model downloads on first real run; tests inject a fake.
+  Consider adding the download to `just setup` (CP24).
+- The repost rule (a long-gone posting reappearing counts as new) is not yet
+  implemented — `dedup` currently always links by canonical key.
+- Full test suite ~7 min (trafilatura import + per-test DB reset); split fast/slow
+  in CP23.
 
 ## How to resume
 
