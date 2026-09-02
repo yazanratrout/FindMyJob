@@ -18,11 +18,9 @@ import hashlib
 import json
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
 from typing import Any, Literal, TypeVar
 
 from pydantic import BaseModel, ValidationError
-from sqlmodel import Session, col, select
 
 from findmyjob.config import Settings, get_settings
 from findmyjob.db import session_scope
@@ -294,9 +292,3 @@ def _loads(text: str) -> Any:
     if start != -1 and end != -1 and end > start:
         cleaned = cleaned[start : end + 1]
     return json.loads(cleaned)
-
-
-def current_month_cost_eur(session: Session) -> float:
-    start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
-    rows = session.exec(select(LlmCall).where(col(LlmCall.created_at) >= start)).all()
-    return round(sum(r.cost_eur for r in rows), 4)

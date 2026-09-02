@@ -5,6 +5,17 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP14 — Cost controls
+- `services/cost`: `current_month_cost_eur` (moved from `llm/client`),
+  `remaining_budget_eur`, `budget_ok`, `mark_budget_exhausted`, `month_to_date`
+  (total, remaining, per-purpose breakdown, linear month-end projection).
+- Budget guard in `analyze` and `judge`: before each job, if
+  `Settings.llm_monthly_budget_eur` would be exceeded, set
+  `run.budget_exhausted=True`, bump `budget_exhausted`, stop — the rest is
+  picked up on the next run (analyses/scores are per-run and resume cleanly).
+- API: `GET /api/costs`.
+- 7 new tests; ruff + mypy clean. No new dependencies.
+
 ### CP13 — Scheduler
 - `findmyjob/scheduler.py`: `PipelineScheduler` (APScheduler `AsyncIOScheduler`
   with a `CronTrigger` from `AppSettings.run_time` / `run_timezone`,

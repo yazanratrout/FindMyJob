@@ -19,6 +19,7 @@ from findmyjob.models.job import JobScore
 from findmyjob.pipelines.base import Pipeline, PipelineResult
 from findmyjob.pipelines.context import PipelineContext
 from findmyjob.services.analyze import current_analysis
+from findmyjob.services.cost import budget_ok, mark_budget_exhausted
 from findmyjob.services.profile import profile_summary_text
 from findmyjob.services.scoring import bucket
 
@@ -55,6 +56,10 @@ class JudgePipeline(Pipeline):
                 score = session.get(JobScore, score_id)
                 if score is None:
                     continue
+                if not budget_ok(session):
+                    mark_budget_exhausted(session, ctx.run_id)
+                    res.bump("budget_exhausted")
+                    break
                 analysis = current_analysis(session, score.job_id)
                 if analysis is None:
                     res.bump("no_analysis")

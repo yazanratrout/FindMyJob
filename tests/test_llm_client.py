@@ -4,9 +4,10 @@ from sqlmodel import Session, select
 from tests.fakes import scripted_api_fn
 
 from findmyjob.db import get_engine
-from findmyjob.llm.client import LlmClient, LlmError, current_month_cost_eur
+from findmyjob.llm.client import LlmClient, LlmError
 from findmyjob.models.enums import LlmPurpose
 from findmyjob.models.run import LlmCall
+from findmyjob.services.cost import current_month_cost_eur
 
 pytestmark = pytest.mark.usefixtures("seeded_session")
 

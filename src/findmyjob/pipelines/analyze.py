@@ -20,6 +20,7 @@ from findmyjob.models.job import Job, JobAnalysis, JobScore
 from findmyjob.pipelines.base import Pipeline, PipelineResult
 from findmyjob.pipelines.context import PipelineContext
 from findmyjob.services.analyze import analyze_job
+from findmyjob.services.cost import budget_ok, mark_budget_exhausted
 
 _MAX_PER_RUN = 120
 
@@ -63,6 +64,10 @@ class AnalyzePipeline(Pipeline):
                 job = session.get(Job, job_id)
                 if job is None:
                     continue
+                if not budget_ok(session):
+                    mark_budget_exhausted(session, ctx.run_id)
+                    res.bump("budget_exhausted")
+                    break
                 try:
                     analysis, llm = analyze_job(
                         session, job, city=city, client=client, run_id=ctx.run_id
