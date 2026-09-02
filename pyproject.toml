@@ -1,0 +1,68 @@
+[project]
+name = "findmyjob"
+version = "0.1.0"
+description = "Local, human-in-the-loop pipeline to find, analyze, score and apply to working-student positions."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",   # pyflakes / pycodestyle
+    "I",             # isort
+    "UP",            # pyupgrade
+    "B",             # flake8-bugbear
+    "C4",            # comprehensions
+    "SIM",           # flake8-simplify
+    "RUF",           # ruff-specific
+]
+ignore = ["B008"]    # FastAPI uses function calls in argument defaults (Depends)
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+mypy_path = "src"
+packages = ["findmyjob"]
+# Pragmatic-strict: SQLModel + full `strict` fight constantly, so we keep the
+# high-value checks and drop `disallow_any_generics` (JSON columns are Any).
+check_untyped_defs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+module = "findmyjob.models.*"
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["trafilatura.*", "selectolax.*", "docxtpl.*", "fastembed.*", "pdfplumber.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-ra -q"
+filterwarnings = ["error::DeprecationWarning:findmyjob.*"]
+
+[tool.coverage.run]
+source = ["src/findmyjob"]
+branch = true

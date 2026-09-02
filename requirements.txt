@@ -1,0 +1,52 @@
+# FindMyJob runtime dependencies.
+# Minimum versions are specified to guarantee the APIs we rely on exist.
+# For a reproducible install, use the generated lock file instead:
+#   pip install -r requirements.lock
+# Regenerate the lock file after changing this file:
+#   pip install -r requirements.txt && pip freeze --exclude-editable > requirements.lock
+
+# ---- Web framework / server ----
+fastapi>=0.115
+uvicorn[standard]>=0.30
+python-multipart>=0.0.12
+itsdangerous>=2.2
+
+# ---- Data model / persistence ----
+sqlmodel>=0.0.22
+SQLAlchemy>=2.0.30
+alembic>=1.13
+
+# ---- Config / validation ----
+pydantic>=2.9
+pydantic-settings>=2.5
+email-validator>=2.2
+
+# ---- HTTP / resilience ----
+httpx>=0.27
+tenacity>=9.0
+
+# ---- Logging ----
+structlog>=24.4
+
+# ---- LLM ----
+anthropic>=0.40
+
+# ---- Scheduling ----
+APScheduler>=3.10
+
+# ---- Parsing / documents ----
+PyYAML>=6.0
+python-dateutil>=2.9
+trafilatura>=1.12
+selectolax>=0.3.21
+pdfplumber>=0.11
+python-docx>=1.1
+docxtpl>=0.18
+Jinja2>=3.1
+
+# ---- Security ----
+argon2-cffi>=23.1
+
+# ---- Embeddings (local, CPU, no torch) ----
+fastembed>=0.4
+numpy>=1.26

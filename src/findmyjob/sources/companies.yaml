@@ -1,0 +1,166 @@
+# Seed registry of Munich-area employers that hire students.
+#
+# `ats_type` + `ats_slug` are used to query a company's public job endpoint
+# directly. Where the ATS/slug is unknown, only `careers_url` is set and the
+# CP6 detector (or the user) fills in the rest later. Wrong slugs fail softly.
+#
+# ats_type: greenhouse | lever | personio | smartrecruiters | ashby | none
+
+- name: Celonis
+  ats_type: greenhouse
+  ats_slug: celonis
+  careers_url: https://www.celonis.com/careers/jobs/
+  city: München
+
+- name: Personio
+  ats_type: none
+  careers_url: https://www.personio.com/careers/
+  city: München
+
+- name: inovex
+  ats_type: personio
+  ats_slug: inovex
+  careers_url: https://www.inovex.de/de/karriere/
+  city: München
+
+- name: Stylight
+  ats_type: none
+  careers_url: https://www.stylight.com/jobs/
+  city: München
+
+- name: Check24
+  ats_type: none
+  careers_url: https://jobs.check24.de/
+  city: München
+
+- name: FlixBus (Flix SE)
+  ats_type: greenhouse
+  ats_slug: flixbus
+  careers_url: https://www.flix.com/company/jobs
+  city: München
+
+- name: KONUX
+  ats_type: greenhouse
+  ats_slug: konux
+  careers_url: https://www.konux.com/careers/
+  city: München
+
+- name: Isar Aerospace
+  ats_type: greenhouse
+  ats_slug: isaraerospace
+  careers_url: https://www.isaraerospace.com/careers
+  city: Ottobrunn
+
+- name: Lilium
+  ats_type: greenhouse
+  ats_slug: lilium
+  careers_url: https://lilium.com/careers
+  city: Weßling
+
+- name: Agile Robots
+  ats_type: none
+  careers_url: https://www.agile-robots.com/en/careers
+  city: München
+
+- name: NavVis
+  ats_type: greenhouse
+  ats_slug: navvis
+  careers_url: https://www.navvis.com/company/careers
+  city: München
+
+- name: ProGlove
+  ats_type: greenhouse
+  ats_slug: proglove
+  careers_url: https://www.proglove.com/careers/
+  city: München
+
+- name: PATRIZIA
+  ats_type: none
+  careers_url: https://www.patrizia.ag/en/career/
+  city: Augsburg
+
+- name: Siemens
+  ats_type: none
+  careers_url: https://jobs.siemens.com/careers
+  city: München
+
+- name: Siemens Healthineers
+  ats_type: none
+  careers_url: https://jobs.siemens-healthineers.com/careers
+  city: Erlangen
+
+- name: BMW Group
+  ats_type: none
+  careers_url: https://www.bmwgroup.jobs/de/de.html
+  city: München
+
+- name: Allianz
+  ats_type: none
+  careers_url: https://careers.allianz.com/
+  city: München
+
+- name: Munich Re
+  ats_type: none
+  careers_url: https://www.munichre.com/careers/
+  city: München
+
+- name: MTU Aero Engines
+  ats_type: none
+  careers_url: https://www.mtu.de/careers/
+  city: München
+
+- name: Infineon
+  ats_type: none
+  careers_url: https://www.infineon.com/cms/en/careers/
+  city: Neubiberg
+
+- name: Google
+  ats_type: none
+  careers_url: https://www.google.com/about/careers/applications/jobs/results?location=Munich,%20Germany
+  city: München
+
+- name: Microsoft
+  ats_type: none
+  careers_url: https://jobs.careers.microsoft.com/global/en/search?lc=Munich%2C%20Bavaria%2C%20Germany
+  city: München
+
+- name: Amazon
+  ats_type: none
+  careers_url: https://www.amazon.jobs/en/locations/munich-germany
+  city: München
+
+- name: Apple
+  ats_type: none
+  careers_url: https://jobs.apple.com/en-us/search?location=munich-MUC
+  city: München
+
+- name: SAP
+  ats_type: none
+  careers_url: https://jobs.sap.com/
+  city: München
+
+- name: IBM
+  ats_type: none
+  careers_url: https://www.ibm.com/careers/search
+  city: München
+
+- name: Interhyp
+  ats_type: none
+  careers_url: https://www.interhyp.de/ueber-interhyp/karriere/
+  city: München
+
+- name: HRS Group
+  ats_type: none
+  careers_url: https://careers.hrs.com/
+  city: München
+
+- name: Scalable Capital
+  ats_type: greenhouse
+  ats_slug: scalablecapital
+  careers_url: https://de.scalable.capital/en/careers
+  city: München
+
+- name: Personio Talent (Wayfair Munich)
+  ats_type: none
+  careers_url: https://www.aboutwayfair.com/careers
+  city: München
