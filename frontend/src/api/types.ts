@@ -202,6 +202,29 @@ export interface DocumentNeed {
   have: boolean;
 }
 
+export interface CoverLetterContent {
+  language: "de" | "en";
+  recipient: { company: string; name?: string | null; street?: string | null; postal_code?: string | null; city?: string | null };
+  subject: string;
+  salutation: string;
+  paragraphs: string[];
+  closing: string;
+  claims_used: { claim: string; evidence_from_profile: string }[];
+}
+
+export interface CoverLetter {
+  id: number;
+  job_id: number;
+  version: number;
+  language: string;
+  tone: string;
+  content: CoverLetterContent;
+  claims_used: { claim: string; evidence_from_profile: string }[];
+  user_edited: boolean;
+  has_docx: boolean;
+  created_at: string;
+}
+
 export interface JobDetail extends JobCard {
   jd_text: string | null;
   company_url: string | null;

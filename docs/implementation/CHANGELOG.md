@@ -5,6 +5,25 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### CP19 — Cover letter generation + DOCX
+- `llm/cover_letter`: `generate_cover_letter()` + prompt (posting-specific hook,
+  evidence-backed claims, banned-phrase list, language/tone) + result schema
+  (recipient, subject, salutation, paragraphs, closing, `claims_used`).
+- `docx/render`: generates a DIN-5008-ish `docxtpl` template on first use,
+  renders a letter to `data/letters/<job>/Cover letter <Company> vN.docx`.
+- `services/cover_letters`: `generate` (resolve language, persist row, render,
+  advance the `application` to `preparing`), `update` (validate + re-render +
+  mark `user_edited`), `regenerate` (new version, instruction bypasses cache).
+- API: `POST /api/jobs/{id}/cover-letter`, `GET /api/jobs/{id}/cover-letters`,
+  `PUT /api/cover-letters/{id}`, `POST /api/cover-letters/{id}/regenerate`,
+  `GET /api/cover-letters/{id}/docx`.
+- `db`: `PRAGMA busy_timeout=5000` (scheduler + API can now write concurrently
+  without spurious "database is locked").
+- Frontend: `CoverLetterPanel` inside the job drawer — generate, edit paragraphs,
+  a claims-used verification table, regenerate (with instruction), download
+  `.docx` via an authenticated blob fetch. Drawer button is enabled.
+- 6 new backend tests; ruff + mypy clean; `vite build` clean. No new deps.
+
 ### CP17 + CP18 — Dashboard job list + job detail
 - Backend: `services/job_read` (`list_jobs` — canonical active jobs joined to
   their most-recent `JobScore` + analysis + company, ranked by `final_score`;

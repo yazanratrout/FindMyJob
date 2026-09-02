@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { useJobDetail } from "@/api/hooks";
 import type { DocumentNeed, ScoreComponent } from "@/api/types";
 import { cn } from "@/lib/cn";
+import { CoverLetterPanel } from "./CoverLetterPanel";
 import { Button, ErrorBox, Spinner } from "./ui";
 
 function Bar({ name, c }: { name: string; c: ScoreComponent }) {
@@ -32,6 +34,7 @@ export function JobDetailDrawer({
   onClose: () => void;
 }) {
   const detail = useJobDetail(jobId);
+  const [showCoverLetter, setShowCoverLetter] = useState(false);
 
   if (jobId == null) return null;
 
@@ -68,11 +71,26 @@ export function JobDetailDrawer({
                     <a href={d.apply_url ?? d.url} target="_blank" rel="noreferrer">
                       <Button>Open posting ↗</Button>
                     </a>
-                    <Button variant="ghost" title="Cover letter arrives in CP19" disabled>
-                      Prepare cover letter
+                    <Button
+                      variant={showCoverLetter ? "ghost" : "primary"}
+                      onClick={() => setShowCoverLetter((v) => !v)}
+                    >
+                      {showCoverLetter ? "Hide cover letter" : "Prepare cover letter"}
                     </Button>
                   </div>
                 </div>
+
+                {showCoverLetter && jobId != null && (
+                  <section className="rounded-md border border-slate-200 bg-slate-50 p-3">
+                    <h3 className="mb-2 text-sm font-semibold text-slate-500 uppercase">
+                      Cover letter
+                    </h3>
+                    <p className="mb-2 text-xs text-slate-500">
+                      Review every claim against your profile before you send this.
+                    </p>
+                    <CoverLetterPanel jobId={jobId} />
+                  </section>
+                )}
 
                 <section>
                   <h3 className="mb-2 text-sm font-semibold text-slate-500 uppercase">

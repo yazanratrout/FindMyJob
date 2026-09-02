@@ -3,6 +3,8 @@ import { api } from "./client";
 import type {
   AuthStatus,
   Costs,
+  CoverLetter,
+  CoverLetterContent,
   DocumentRead,
   DocumentType,
   Health,
@@ -216,4 +218,43 @@ export function useJobDetail(id: number | null) {
     queryFn: () => api.get<JobDetail>(`/jobs/${id}`),
     enabled: id != null,
   });
+}
+
+// ---- cover letters ---------------------------------------------
+export function useCoverLetters(jobId: number | null) {
+  return useQuery({
+    queryKey: ["cover-letters", jobId],
+    queryFn: () => api.get<CoverLetter[]>(`/jobs/${jobId}/cover-letters`),
+    enabled: jobId != null,
+  });
+}
+
+export function useGenerateCoverLetter(jobId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api.post<CoverLetter>(`/jobs/${jobId}/cover-letter`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cover-letters", jobId] }),
+  });
+}
+
+export function useUpdateCoverLetter(jobId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, content }: { id: number; content: CoverLetterContent }) =>
+      api.put<CoverLetter>(`/cover-letters/${id}`, { content }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cover-letters", jobId] }),
+  });
+}
+
+export function useRegenerateCoverLetter(jobId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, instruction }: { id: number; instruction?: string }) =>
+      api.post<CoverLetter>(`/cover-letters/${id}/regenerate`, { instruction }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cover-letters", jobId] }),
+  });
+}
+
+export function downloadCoverLetter(id: number) {
+  return api.downloadFile(`/cover-letters/${id}/docx`);
 }

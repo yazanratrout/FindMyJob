@@ -28,6 +28,7 @@ def _sqlite_pragmas(dbapi_connection: Any, _connection_record: Any) -> None:
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA busy_timeout=5000")
     cursor.close()
 
 
