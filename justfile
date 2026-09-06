@@ -8,6 +8,11 @@ venv := ".venv"
 py   := venv + "/bin/python"
 pip  := venv + "/bin/pip"
 
+# Belt-and-braces import path: on macOS the editable-install .pth in .venv can be
+# skipped if the folder gets the "hidden" flag (Python 3.13 skips hidden .pth
+# files). Putting src on PYTHONPATH makes `findmyjob` importable regardless.
+export PYTHONPATH := justfile_directory() / "src"
+
 default:
     @just --list
 
