@@ -138,6 +138,40 @@ def test_skills_match_rewards_overlap():
     assert strong.breakdown["skills_match"]["raw"] > weak.breakdown["skills_match"]["raw"]
 
 
+def test_field_relevance_ignores_job_type_word():
+    """An off-field 'Werkstudent ...' must not borrow relevance from the word."""
+    st = _settings(
+        target_fields=["Machine Learning", "Robotics", "Data"], target_titles=["Werkstudent"]
+    )
+    on_field = compute_soft_score(
+        job=_job(title="Werkstudent Machine Learning"),
+        analysis=_analysis(
+            skills=[{"name": "PyTorch", "required": True}], must_haves=["Machine Learning"]
+        ),
+        profile_skills=["Python"],
+        profile_languages={"german": "C1"},
+        settings=st,
+        company_affinity=0.5,
+        now=NOW,
+    )
+    off_field = compute_soft_score(
+        job=_job(title="Immobilienmakler - Schwerpunkt Vermietung | Werkstudent"),
+        analysis=_analysis(
+            skills=[], must_haves=["Du bist gut organisiert.", "Du arbeitest zuverlaessig."]
+        ),
+        profile_skills=["Python"],
+        profile_languages={"german": "C1"},
+        settings=st,
+        company_affinity=0.5,
+        now=NOW,
+    )
+    assert off_field.breakdown["field_relevance"]["raw"] < 0.25
+    assert (
+        on_field.breakdown["field_relevance"]["raw"] > off_field.breakdown["field_relevance"]["raw"]
+    )
+    assert off_field.score < on_field.score
+
+
 def test_hours_fit_decays_over_limit():
     over = compute_soft_score(
         job=_job(),

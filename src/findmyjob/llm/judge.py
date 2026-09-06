@@ -11,7 +11,7 @@ from findmyjob.llm.client import LlmClient, LlmResult
 from findmyjob.llm.prompts import load_prompt
 from findmyjob.models.enums import LlmPurpose
 
-JUDGE_VERSION = "2026-09-02.1"
+JUDGE_VERSION = "2026-09-06.1"  # prompt: field-fit dominates
 
 
 class JudgeResult(BaseModel):

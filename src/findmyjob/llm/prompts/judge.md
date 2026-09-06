@@ -11,6 +11,13 @@ Produce:
   (hours, enrolment, start), and language. Be calibrated: 50 is an average
   Werkstudent match; 80+ means a strong, well-aligned fit; below 30 means the
   student would likely be filtered out.
+  **Field/domain fit dominates.** This student is running a *targeted* search in
+  the fields listed in their profile. A posting in an unrelated domain (sales,
+  real estate, HR, customer support, event management for a technical student, or
+  vice versa) is a weak fit even when the hours, enrolment and "no experience
+  required" all line up - score those **below 35** unless the profile shows real,
+  specific relevant background. Do not talk yourself into a high score because
+  the logistics work.
 - `rationale`: 2–4 sentences, concrete, referencing the posting and the profile.
 - `missing_qualifications`: specific things the posting wants that the profile
   doesn't clearly show (empty if none).

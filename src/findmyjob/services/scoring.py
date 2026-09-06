@@ -159,10 +159,46 @@ def _tokens(text: str) -> set[str]:
     return {t for t in fold_accents(text).lower().replace("/", " ").split() if len(t) > 2}
 
 
+#: job-type / contract words carry no field signal - they must not let an
+#: off-topic posting borrow relevance just because it is a "Werkstudent" role.
+_NON_FIELD_WORDS: frozenset[str] = frozenset(
+    {
+        "werkstudent",
+        "werkstudentin",
+        "working",
+        "student",
+        "studentin",
+        "students",
+        "studentische",
+        "hilfskraft",
+        "praktikum",
+        "praktikant",
+        "praktikantin",
+        "intern",
+        "internship",
+        "trainee",
+        "minijob",
+        "thesis",
+        "abschlussarbeit",
+        "teilzeit",
+        "vollzeit",
+        "part",
+        "time",
+        "full",
+        "job",
+        "stelle",
+        "position",
+        "role",
+        "bereich",
+        "schwerpunkt",
+    }
+)
+
+
 def _skills_match(analysis: JobAnalysis, profile_skills: list[str]) -> float:
     skills = analysis.skills
     if not skills:
-        return 0.5
+        return 0.4  # no identifiable skill requirements - a weak signal, not neutral
     have = {s.lower() for s in profile_skills}
     have_tokens = set().union(*(_tokens(s) for s in profile_skills)) if profile_skills else set()
     matched_w = total_w = 0.0
@@ -176,14 +212,25 @@ def _skills_match(analysis: JobAnalysis, profile_skills: list[str]) -> float:
 
 
 def _field_relevance(job: Job, analysis: JobAnalysis, settings: AppSettings) -> float:
-    target = _tokens(" ".join([*settings.target_titles, *settings.target_fields]))
+    """How much this posting is *about* the user's fields - not just a role of the
+    right shape. Compared against ``target_fields`` (and the extracted skills),
+    with job-type words stripped so an off-field "Werkstudent ..." can't borrow
+    relevance."""
+    target = _tokens(" ".join(settings.target_fields)) - _NON_FIELD_WORDS
     if not target:
         return 0.6
-    text = _tokens(f"{job.title} {' '.join(analysis.must_haves)}")
+    skill_names = " ".join(str(s.get("name", "")) for s in analysis.skills)
+    text = (
+        _tokens(
+            f"{job.title} {skill_names} "
+            f"{' '.join(analysis.must_haves)} {' '.join(analysis.nice_haves)}"
+        )
+        - _NON_FIELD_WORDS
+    )
     if not text:
-        return 0.4
+        return 0.35
     overlap = len(text & target) / len(target)
-    return max(0.0, min(1.0, 0.2 + overlap * 1.6))
+    return max(0.0, min(1.0, 0.12 + overlap * 2.2))
 
 
 def _language_fit(
