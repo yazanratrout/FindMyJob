@@ -22,7 +22,11 @@ from sqlmodel import Session, col, select
 
 from findmyjob.models.enums import JobLifecycle
 from findmyjob.models.job import Job, JobEmbedding
-from findmyjob.normalize import normalize_company_name, normalize_title
+from findmyjob.normalize import (
+    normalize_company_name,
+    normalize_title,
+    significant_title_words,
+)
 from findmyjob.pipelines.base import Pipeline, PipelineResult
 from findmyjob.pipelines.context import PipelineContext
 from findmyjob.services.embeddings import (
@@ -38,8 +42,30 @@ _SIM_THRESHOLD = 0.92
 _MAX_JOBS = 5000
 
 
+#: below this Jaccard overlap of normalized title words, two postings from the
+#: same employer are treated as different roles no matter how alike their text is.
+_TITLE_OVERLAP_MIN = 0.5
+
+
 def canonical_key(company_name: str, title: str) -> str:
     return f"{normalize_company_name(company_name)}|{normalize_title(title)}"
+
+
+def titles_compatible(a: str, b: str) -> bool:
+    """Could these two titles plausibly be the same role?
+
+    Guards the semantic tier: one employer's postings share so much boilerplate
+    that the embedding will merge "Account Executive" into "Enterprise AI
+    Consultant". Job-type words are stripped first, so the cross-language and
+    cross-source rewordings this tier exists for ("Werkstudent Analytics" vs
+    "Working Student Analytics") still match.
+    """
+    ta, tb = significant_title_words(a), significant_title_words(b)
+    if not ta or not tb:
+        return True  # nothing to judge on - fall back to the embedding
+    if ta <= tb or tb <= ta:
+        return True  # one is a qualified variant of the other
+    return len(ta & tb) / len(ta | tb) >= _TITLE_OVERLAP_MIN
 
 
 class DedupPipeline(Pipeline):
@@ -163,10 +189,17 @@ class DedupPipeline(Pipeline):
                 sims = cosine_matrix(matrix)
                 for i in range(len(group_ids)):
                     for j in range(i):
-                        if sims[i, j] >= _SIM_THRESHOLD:
-                            dup, owner = jobs[group_ids[i]], jobs[group_ids[j]]
-                            if dup.canonical_job_id is None:
-                                dup.canonical_job_id = owner.canonical_job_id or owner.id
-                                session.add(dup)
-                                res.bump("linked_by_embedding")
-                            break
+                        if sims[i, j] < _SIM_THRESHOLD:
+                            continue
+                        dup, owner = jobs[group_ids[i]], jobs[group_ids[j]]
+                        # Postings from one employer share so much boilerplate that
+                        # the embedding alone will happily merge unrelated roles.
+                        # The title is what actually distinguishes them.
+                        if not titles_compatible(dup.title, owner.title):
+                            res.bump("kept_title_differs")
+                            continue
+                        if dup.canonical_job_id is None:
+                            dup.canonical_job_id = owner.canonical_job_id or owner.id
+                            session.add(dup)
+                            res.bump("linked_by_embedding")
+                        break

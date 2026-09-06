@@ -19,7 +19,7 @@ from findmyjob.models.base import utcnow
 from findmyjob.models.config import AppSettings
 from findmyjob.models.enums import CEFR_ORDER, Decision
 from findmyjob.models.job import Job, JobAnalysis
-from findmyjob.normalize import fold_accents, location_mentions_city
+from findmyjob.normalize import JOB_TYPE_WORDS, fold_accents, location_mentions_city
 
 _STUDENT_SENIORITY = {"student", "entry", "junior"}
 
@@ -57,16 +57,27 @@ def cheap_hard_checks(
         if age_days > settings.recency_days:
             failures.append("recency")
 
-    haystack = f"{job.title}\n{job.jd_text or ''}".lower()
-    for keyword in settings.keywords_block:
-        if keyword and keyword.lower() in haystack:
-            failures.append(f"blacklist:{keyword.lower()}")
-            break
+    # Title only, per the plan's "title or must-haves" rule. Matching the whole
+    # description kills good postings on incidental words - a recruiter's
+    # "Senior HR Recruiterin" signature, or a "Voll- oder Teilzeit" benefits
+    # line. The must-haves half of the rule runs in `analysis_hard_checks`,
+    # once an analysis exists.
+    if (hit := _blocked_keyword(job.title, settings)) is not None:
+        failures.append(f"blacklist:{hit}")
 
     if not _location_ok(job, settings):
         failures.append("location")
 
     return HardResult(not failures, failures)
+
+
+def _blocked_keyword(text: str, settings: AppSettings) -> str | None:
+    """The first blocked keyword present in ``text``, if any."""
+    haystack = (text or "").lower()
+    for keyword in settings.keywords_block:
+        if keyword and keyword.lower() in haystack:
+            return keyword.lower()
+    return None
 
 
 def _location_ok(job: Job, settings: AppSettings) -> bool:
@@ -104,6 +115,11 @@ def analysis_hard_checks(
             have = _cefr(profile_languages.get(str(lang.get("lang", "")).lower()))
             if need and need > cap and have < need:
                 failures.append(f"language:{str(lang.get('lang', '')).lower()}")
+
+    # second half of the blacklist rule: the requirements the analyser extracted
+    # (the title half already ran in `cheap_hard_checks`)
+    if (hit := _blocked_keyword(" ".join(analysis.must_haves), settings)) is not None:
+        failures.append(f"blacklist:{hit}")
 
     contract = _contract_str(analysis)
     if contract == "full_time":
@@ -171,42 +187,6 @@ _SHORT_STOPWORDS: frozenset[str] = frozenset(
 )
 
 
-#: job-type / contract words carry no field signal - they must not let an
-#: off-topic posting borrow relevance just because it is a "Werkstudent" role.
-_NON_FIELD_WORDS: frozenset[str] = frozenset(
-    {
-        "werkstudent",
-        "werkstudentin",
-        "working",
-        "student",
-        "studentin",
-        "students",
-        "studentische",
-        "hilfskraft",
-        "praktikum",
-        "praktikant",
-        "praktikantin",
-        "intern",
-        "internship",
-        "trainee",
-        "minijob",
-        "thesis",
-        "abschlussarbeit",
-        "teilzeit",
-        "vollzeit",
-        "part",
-        "time",
-        "full",
-        "job",
-        "stelle",
-        "position",
-        "role",
-        "bereich",
-        "schwerpunkt",
-    }
-)
-
-
 def _skills_match(analysis: JobAnalysis, profile_skills: list[str]) -> float:
     skills = analysis.skills
     if not skills:
@@ -236,7 +216,7 @@ def _field_relevance(job: Job, analysis: JobAnalysis, settings: AppSettings) -> 
     postings it mostly duplicates the fields, inflating the denominator and
     demoting genuinely on-topic roles.
     """
-    noise = _NON_FIELD_WORDS | _SHORT_STOPWORDS
+    noise = JOB_TYPE_WORDS | _SHORT_STOPWORDS
     target = _tokens(" ".join(settings.target_fields), min_len=2) - noise
     if not target:
         return 0.6

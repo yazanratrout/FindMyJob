@@ -64,6 +64,62 @@ def normalize_title(title: str) -> str:
     return _WHITESPACE.sub(" ", base).strip()
 
 
+#: Words describing the *shape* of an engagement rather than its subject.
+#: They must not make two postings look alike ("Werkstudent Analytics" vs
+#: "Werkstudent Recruiting") nor make an off-topic posting look relevant.
+#: German and English forms of the same thing are both listed, so stripping them
+#: also makes cross-language equivalents comparable.
+JOB_TYPE_WORDS: frozenset[str] = frozenset(
+    {
+        "werkstudent",
+        "werkstudentin",
+        "werkstudenten",
+        "working",
+        "student",
+        "studentin",
+        "students",
+        "studentische",
+        "studentischer",
+        "hilfskraft",
+        "praktikum",
+        "praktikant",
+        "praktikantin",
+        "intern",
+        "internship",
+        "trainee",
+        "minijob",
+        "aushilfe",
+        "thesis",
+        "abschlussarbeit",
+        "bachelorarbeit",
+        "masterarbeit",
+        "teilzeit",
+        "vollzeit",
+        "part",
+        "time",
+        "full",
+        "job",
+        "jobs",
+        "stelle",
+        "position",
+        "role",
+        "bereich",
+        "schwerpunkt",
+        "gesucht",
+        "wanted",
+    }
+)
+
+
+def significant_title_words(title: str) -> set[str]:
+    """Words in a title that say what the role is *about*.
+
+    Drops job-type/contract words and very short filler, so "Werkstudent
+    Analytics" and "Working Student Analytics" both reduce to {"analytics"}.
+    """
+    return {w for w in normalize_title(title).split() if len(w) > 2} - JOB_TYPE_WORDS
+
+
 def slugify(text: str) -> str:
     return _NON_ALNUM.sub("-", fold_accents(text).lower()).strip("-")
 

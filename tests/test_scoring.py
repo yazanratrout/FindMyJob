@@ -67,6 +67,21 @@ def test_blacklist_keyword_fails():
     assert not result.passed and result.failures == ["blacklist:sales"]
 
 
+def test_blacklist_ignores_incidental_words_in_the_description():
+    """A recruiter's "Senior HR Recruiterin" signature must not kill a good job."""
+    job = _job(
+        title="Werkstudent AI Engineering",
+        jd_text="Spannende Aufgaben. Fragen? Melde dich bei Laura, Senior HR Recruiterin.",
+    )
+    assert cheap_hard_checks(job, _settings(keywords_block=["senior"]), now=NOW).passed
+
+
+def test_blacklist_still_applies_to_extracted_requirements():
+    a = _analysis(must_haves=["5+ Jahre Erfahrung als Senior Engineer"])
+    result = analysis_hard_checks(a, {}, _settings(keywords_block=["senior"]))
+    assert not result.passed and "blacklist:senior" in result.failures
+
+
 def test_location_mismatch_fails_but_english_spelling_passes():
     assert cheap_hard_checks(_job(location_raw="Munich, Germany"), _settings(), now=NOW).passed
     bad = cheap_hard_checks(_job(location_raw="Hamburg"), _settings(), now=NOW)

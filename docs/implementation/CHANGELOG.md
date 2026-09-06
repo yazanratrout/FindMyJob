@@ -5,6 +5,27 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### "Why are there so few results?" — two filters were over-firing
+Measured on a live run: 128 canonical jobs in, 33 through the hard checks.
+
+- **The blacklist matched the whole job description.** CP10 specifies "title or
+  must-haves"; the code searched `title + jd_text`, so a posting died on any
+  incidental occurrence — a recruiter's "Senior HR Recruiterin" signature, a
+  "Voll- oder Teilzeit" benefits line. 64 of 128 jobs were blocked this way and
+  23 were false positives (including an *AI Solution Architect* and a *Python
+  Backend Engineer*). Now: title at prefilter time, extracted must-haves in
+  `analysis_hard_checks` — the rule the plan actually describes.
+- **Semantic dedup merged unrelated roles.** One employer's postings share so
+  much boilerplate that cosine ≥ 0.92 collapsed "Account Executive – Federal",
+  "Enterprise AI Consultant" and "Lead Deployment Architect" into one job. 70 of
+  198 postings were linked away and **33 of those were different roles**. Added
+  a title guard (`titles_compatible`): job-type words are stripped, then the
+  significant words must overlap, so cross-language rewordings still merge
+  ("Werkstudent Analytics" ≡ "Working Student Analytics") while distinct roles
+  stay separate.
+- `normalize.JOB_TYPE_WORDS` / `significant_title_words()` now hold that word
+  list once, shared by dedup and field relevance instead of duplicated.
+
 ### Logic review — honest failures, honest seed data
 - **Two-letter fields were invisible to scoring.** `_tokens()` dropped anything
   ≤ 2 characters, so a target field of "AI" (or "ML", "BI", "UX") never matched

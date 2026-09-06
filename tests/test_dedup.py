@@ -65,6 +65,31 @@ async def test_canonical_key_links_cross_source_duplicates(db_session: Session):
         assert s.get(Job, other).canonical_job_id is None
 
 
+def test_titles_compatible_guards_same_company_boilerplate():
+    from findmyjob.pipelines.dedup import titles_compatible
+
+    # the case the semantic tier exists for: same role, different wording/language
+    assert titles_compatible("Werkstudent Analytics", "Working Student Analytics")
+    assert titles_compatible("Werkstudent Data (m/w/d)", "Werkstudent Data Science")
+    # different roles at one employer share boilerplate but not a subject
+    assert not titles_compatible("Account Executive - Federal", "Enterprise AI Consultant")
+    assert not titles_compatible("Lead Value Engineer", "Cloud Economics Specialist")
+
+
+async def test_semantic_does_not_merge_different_roles(db_session: Session):
+    """Same company, near-identical boilerplate, but genuinely different jobs."""
+    a = _job(db_session, sid="s1:1", company="Acme", title="Account Executive Federal", jd="AAA")
+    b = _job(db_session, sid="s2:1", company="Acme", title="Enterprise AI Consultant", jd="AAA")
+    db_session.commit()
+
+    embedder = FakeEmbedder({"AAA": [1.0, 0.0, 0.0, 0.0]})  # identical vectors
+    await Orchestrator([DedupPipeline(embedder=embedder)]).execute()
+
+    with Session(get_engine()) as s:
+        assert s.get(Job, b).canonical_job_id is None  # kept apart by the title guard
+        assert s.get(Job, a).canonical_job_id is None
+
+
 async def test_semantic_links_near_identical_postings(db_session: Session):
     a = _job(db_session, sid="s1:1", company="Beta", title="Werkstudent Analytics", jd="AAA")
     b = _job(db_session, sid="s2:1", company="Beta", title="Working Student Analytics", jd="BBB")
