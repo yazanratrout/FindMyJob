@@ -24,6 +24,16 @@ _DETAIL_URL = "https://www.arbeitsagentur.de/jobsuche/jobdetail/{ref}"
 # our job types -> BA "arbeitszeit" codes
 _ARBEITSZEIT = {"werkstudent": "tz", "student_assistant": "tz", "minijob": "mj"}
 
+#: phrases BA uses in the body of a 403/404 that only means "zero hits"
+_NO_MATCH_MARKERS = ("no match found", "keine treffer", "kein treffer")
+
+
+def _is_no_match(response: httpx.Response) -> bool:
+    if response.status_code not in (403, 404):
+        return False
+    body = (response.text or "").lower()
+    return any(marker in body for marker in _NO_MATCH_MARKERS)
+
 
 class BundesagenturSource(JobSource):
     key: ClassVar[str] = "ba"
@@ -55,9 +65,11 @@ class BundesagenturSource(JobSource):
                     _SEARCH_URL, params=params, headers={"X-API-Key": _API_KEY}
                 )
             except httpx.HTTPStatusError as exc:
-                # The BA search returns 403 ("No match found for request") or 404
-                # when a keyword yields zero hits - not an error, just no results.
-                if exc.response.status_code in (403, 404):
+                # BA answers a zero-hit search with 403/404 and a "no match found"
+                # body - that is not an error. Any *other* 403 means the API is
+                # refusing us (key retired, host blocked); that must stay loud, or
+                # the largest German source dies silently.
+                if _is_no_match(exc.response):
                     log.info("ba.no_results", keyword=keyword)
                     continue
                 raise

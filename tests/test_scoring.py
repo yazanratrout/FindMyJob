@@ -172,6 +172,31 @@ def test_field_relevance_ignores_job_type_word():
     assert off_field.score < on_field.score
 
 
+def test_short_acronym_fields_are_not_dropped():
+    """'AI' / 'ML' are two letters but are usually the whole point of the search."""
+    st = _settings(target_fields=["AI", "Robotics"], keywords_allow=[])
+    hit = compute_soft_score(
+        job=_job(title="Werkstudent AI Engineering"),
+        analysis=_analysis(),
+        profile_skills=["Python"],
+        profile_languages={"german": "C1"},
+        settings=st,
+        company_affinity=0.5,
+        now=NOW,
+    )
+    miss = compute_soft_score(
+        job=_job(title="Werkstudent Buchhaltung"),
+        analysis=_analysis(skills=[], must_haves=["Sorgfalt"]),
+        profile_skills=["Python"],
+        profile_languages={"german": "C1"},
+        settings=st,
+        company_affinity=0.5,
+        now=NOW,
+    )
+    assert hit.breakdown["field_relevance"]["raw"] > miss.breakdown["field_relevance"]["raw"]
+    assert hit.breakdown["field_relevance"]["raw"] > 0.4
+
+
 def test_hours_fit_decays_over_limit():
     over = compute_soft_score(
         job=_job(),

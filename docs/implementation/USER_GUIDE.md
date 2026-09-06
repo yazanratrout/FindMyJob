@@ -101,17 +101,31 @@ content-hash cache, `LLM_MONTHLY_BUDGET_EUR` hard stop).
 
 ## Daily use
 
-- Open the dashboard each morning. New recommendations are badged; the
-  **Activity** tab shows a digest per run.
-- Click a job to see the match breakdown ("why this score"), the extracted
-  requirements, the original description, the apply link, and which of your
-  documents it needs.
-- Give the recommendation a 👍 or 👎 in the drawer. That, plus how far you take
-  each application in the tracker, feeds the calibration panel.
-- If you like it after reading it yourself, click **Prepare cover letter**.
+**Today** is the page you live on.
+
+- Headline stats, then the ranked shortlist. Each card carries the match score,
+  the two halves it's blended from (`rules` = the deterministic score, `model` =
+  the LLM's holistic rating), what fits, and the biggest gap — enough to triage
+  without opening anything.
+- Bucket chips switch between **Recommended / Maybe / All scored**; **Filters**
+  narrows by source, contract, age and whether a salary is stated.
+- Trigger a run with **Run pipeline now** — a live banner shows which stage it's
+  on, and the list refreshes itself when the run lands.
+- Click a job for the drawer, which is tabbed:
+  **Overview** (assessment, what to lead with, gaps, and the full "why this
+  score" breakdown) · **Analysis** (extracted requirements, skills, languages,
+  hours — hover an underlined value for the sentence it came from) ·
+  **Documents** (checklist against what you've uploaded) · **Cover letter** ·
+  **Posting** (the original text).
+- Rate the recommendation 👍 / 👎 in the drawer header. That, plus how far you
+  take each application in the tracker, feeds **Settings → Calibration**.
+- If you like it after reading it yourself, use the **Cover letter** tab.
   Review the draft (every claim is traced back to something in your profile),
-  edit inline, then **Download** `Cover letter <Company>.docx`.
-- Track status per job: interested → applied → interview → outcome.
+  edit inline, then download `Cover letter <Company>.docx`.
+- **Tracker**: drag cards between columns to change status; click a card to set a
+  follow-up date and notes. Follow-ups that come due surface on Today.
+- **Activity** keeps a digest per run; **Runs** shows per-stage timings, what
+  each stage did, and anything that failed.
 
 ## Tuning the score
 

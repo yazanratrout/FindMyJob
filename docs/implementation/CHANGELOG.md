@@ -5,6 +5,32 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### Logic review — honest failures, honest seed data
+- **Two-letter fields were invisible to scoring.** `_tokens()` dropped anything
+  ≤ 2 characters, so a target field of "AI" (or "ML", "BI", "UX") never matched
+  anything — for a search built around *AI / GenAI* that silently removed the
+  main signal. `_tokens(min_len=…)` now keeps short acronyms where they matter,
+  guarded by a small stop-word set.
+  Folding `keywords_allow` into the same target was tried and **rejected** —
+  measured against live postings it duplicated the fields, inflated the
+  denominator and demoted the genuinely on-topic roles.
+- **Bundesagentur 403 handling corrected.** The earlier fix treated *any* 403 as
+  "zero results", which silently hid a total outage — and `rest.arbeitsagentur.de`
+  is in fact refusing this client at the host root (403 on `/` too, while
+  `www.arbeitsagentur.de` is fine). Only a 403/404 whose body says "no match
+  found" / "keine Treffer" now counts as empty; anything else propagates so the
+  largest German source can't die quietly. The Today page surfaces a run's error
+  count with a link to Runs.
+- **`decide` only processes jobs that passed the hard checks.** It was building a
+  documents checklist for every score in the run, including archived ones, which
+  wasted work and produced a misleading `no_analysis` stat (66 on a 62-job run).
+- **Dead ATS slugs removed from the seed** (verified 2026-09-06): FlixBus,
+  Lilium, ProGlove and Scalable Capital's Greenhouse boards 404; inovex's
+  Personio feed redirects to the vendor's marketing site. They are now
+  `ats_type: none` and fall back to their `careers_url` via the JSON-LD source.
+  4 of the 8 seeded Greenhouse boards were dead — every run logged four
+  warnings and fetched nothing from them.
+
 ### UI rework — make the daily loop obvious
 The backend was complete but the UI didn't guide the one thing you do every
 morning: decide what's worth applying to.

@@ -18,8 +18,7 @@
   city: München
 
 - name: inovex
-  ats_type: personio
-  ats_slug: inovex
+  ats_type: none          # ATS board retired (verified 2026-09-06)
   careers_url: https://www.inovex.de/de/karriere/
   city: München
 
@@ -34,8 +33,7 @@
   city: München
 
 - name: FlixBus (Flix SE)
-  ats_type: greenhouse
-  ats_slug: flixbus
+  ats_type: none          # ATS board retired (verified 2026-09-06)
   careers_url: https://www.flix.com/company/jobs
   city: München
 
@@ -52,8 +50,7 @@
   city: Ottobrunn
 
 - name: Lilium
-  ats_type: greenhouse
-  ats_slug: lilium
+  ats_type: none          # ATS board retired (verified 2026-09-06)
   careers_url: https://lilium.com/careers
   city: Weßling
 
@@ -69,8 +66,7 @@
   city: München
 
 - name: ProGlove
-  ats_type: greenhouse
-  ats_slug: proglove
+  ats_type: none          # ATS board retired (verified 2026-09-06)
   careers_url: https://www.proglove.com/careers/
   city: München
 
@@ -155,8 +151,7 @@
   city: München
 
 - name: Scalable Capital
-  ats_type: greenhouse
-  ats_slug: scalablecapital
+  ats_type: none          # ATS board retired (verified 2026-09-06)
   careers_url: https://de.scalable.capital/en/careers
   city: München
 

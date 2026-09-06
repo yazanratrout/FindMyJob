@@ -155,8 +155,20 @@ def compute_soft_score(
     return SoftScore(score=round(100 * weighted / total_w, 1), breakdown=breakdown)
 
 
-def _tokens(text: str) -> set[str]:
-    return {t for t in fold_accents(text).lower().replace("/", " ").split() if len(t) > 2}
+def _tokens(text: str, *, min_len: int = 3) -> set[str]:
+    """Word set for overlap comparisons.
+
+    ``min_len`` drops filler; pass 2 where short acronyms carry real meaning
+    ("AI", "ML", "BI", "UX") - those are exactly the fields a student targets.
+    """
+    cleaned = fold_accents(text).lower().replace("/", " ").replace(",", " ")
+    return {t.strip("()&.-") for t in cleaned.split() if len(t.strip("()&.-")) >= min_len}
+
+
+#: two-letter noise that would otherwise slip in once ``min_len`` drops to 2.
+_SHORT_STOPWORDS: frozenset[str] = frozenset(
+    {"de", "en", "im", "in", "am", "an", "zu", "of", "or", "to", "the", "und", "and", "for"}
+)
 
 
 #: job-type / contract words carry no field signal - they must not let an
@@ -212,20 +224,30 @@ def _skills_match(analysis: JobAnalysis, profile_skills: list[str]) -> float:
 
 
 def _field_relevance(job: Job, analysis: JobAnalysis, settings: AppSettings) -> float:
-    """How much this posting is *about* the user's fields - not just a role of the
-    right shape. Compared against ``target_fields`` (and the extracted skills),
-    with job-type words stripped so an off-field "Werkstudent ..." can't borrow
-    relevance."""
-    target = _tokens(" ".join(settings.target_fields)) - _NON_FIELD_WORDS
+    """How much this posting is *about* the user's subject - not just a role of the
+    right shape.
+
+    Compared against ``target_fields`` and the posting's title / skills /
+    requirements. Job-type words are stripped from both sides so an off-field
+    "Werkstudent ..." cannot borrow relevance, and short acronyms ("AI", "ML")
+    are kept because they are usually the whole point of the search.
+
+    ``keywords_allow`` is deliberately *not* folded in: measured against live
+    postings it mostly duplicates the fields, inflating the denominator and
+    demoting genuinely on-topic roles.
+    """
+    noise = _NON_FIELD_WORDS | _SHORT_STOPWORDS
+    target = _tokens(" ".join(settings.target_fields), min_len=2) - noise
     if not target:
         return 0.6
     skill_names = " ".join(str(s.get("name", "")) for s in analysis.skills)
     text = (
         _tokens(
             f"{job.title} {skill_names} "
-            f"{' '.join(analysis.must_haves)} {' '.join(analysis.nice_haves)}"
+            f"{' '.join(analysis.must_haves)} {' '.join(analysis.nice_haves)}",
+            min_len=2,
         )
-        - _NON_FIELD_WORDS
+        - noise
     )
     if not text:
         return 0.35

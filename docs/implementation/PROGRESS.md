@@ -4,7 +4,8 @@ Living status of the build. Update this at the end of every checkpoint.
 For the full spec see [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md);
 for what changed when, [`CHANGELOG.md`](./CHANGELOG.md).
 
-**Last updated:** post-CP25 spec-conformance audit — **all 25 checkpoints complete.**
+**Last updated:** post-CP25 — all 25 checkpoints complete, then a **UI rework +
+scoring pass driven by real runs** (see the CHANGELOG entries above CP25).
 **Resume from:** nothing outstanding. Every checkpoint has been re-checked
 against the plan and the remaining gaps closed (repost rule, JSON-LD enrich
 merge, `/api/sources`, `pipeline run --source/--limit`). Future work is the
@@ -92,9 +93,13 @@ Milestones: **M1 (CP0–CP4) complete** · **M2 (CP5–CP8) complete** · **M3 (
   signed session cookie; all `/api/*` except `health` + `auth` are guarded.
 - **API** (`api/`): `/api/{health,auth,documents,profile,settings,semester-terms,
   companies,runs,costs,jobs,cover-letters,applications,digests,eligibility}`.
-- **Frontend** (`frontend/`): auth, onboarding wizard, Settings, ranked dashboard,
-  job-detail drawer, application tracker, Activity (digests + badge), Eligibility
-  (conditional), **Runs list + run-detail drawer**.
+- **Frontend** (`frontend/`): a shared UI kit (`components/ui.tsx`) + lucide
+  icons; auth; onboarding wizard with a step rail; sectioned Settings;
+  **Today** (live run banner, headline stats, bucket chips, filters, cards that
+  show the rules/model split and fits/gaps); **tabbed job drawer** (overview ·
+  analysis · documents · cover letter · posting); **drag-and-drop tracker**;
+  Activity digests; Runs list + per-stage detail drawer; Eligibility
+  (conditional); calibration panel.
 - **CLI**: `findmyjob db …`, `pipeline run|list`, `schedule status`,
   `maintenance backup|prune`, `models fetch`, `calibrate [--apply]`,
   `doctor` (11 checks), `shell`.

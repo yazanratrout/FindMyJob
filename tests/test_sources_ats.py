@@ -218,6 +218,20 @@ async def test_ba_403_no_results_is_not_an_error(http: HttpClient):
     await http.aclose()
 
 
+@respx.mock
+async def test_ba_bare_403_is_a_real_error(http: HttpClient):
+    """A 403 with no "no match" body means the API is refusing us - the largest
+    German source must not die silently."""
+    from findmyjob.sources.api import BundesagenturSource
+
+    respx.get("https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs").mock(
+        return_value=httpx.Response(403, text="")
+    )
+    with pytest.raises(httpx.HTTPStatusError):
+        await BundesagenturSource(Settings(), http).fetch(QUERY)
+    await http.aclose()
+
+
 def test_ats_source_unconfigured_without_matching_companies():
     http = HttpClient(min_interval_s=0.0)
     src = GreenhouseSource(Settings(), http, [_company("lever", "x")])

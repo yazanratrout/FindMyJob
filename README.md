@@ -29,15 +29,19 @@ drafts a tailored cover letter you download as a `.docx` and submit yourself.
 
 ## Status
 
-**All 25 checkpoints complete (Milestones 1–7).** The backend runs the full
-pipeline on a schedule within an LLM budget; the React app has passphrase auth,
-an onboarding wizard, a re-editable settings page, a ranked job dashboard with a
-detail drawer (score breakdown, assessment, documents checklist, original
-posting, 👍/👎 feedback), **LLM cover-letter generation → editable → `.docx`
-download**, an **application tracker** board, a per-run **Activity feed** (in-app
-only — no email/Telegram), an optional **eligibility** ledger, a **Runs**
-inspector, and a **score-calibration** panel that tunes the weights from your
-feedback. `findmyjob pipeline run` (or `POST /api/runs`, or the daily scheduler)
+**All 25 checkpoints complete (Milestones 1–7), plus a UI rework and a scoring
+pass on live data.** The backend runs the full pipeline on a schedule within an
+LLM budget. The React app is built around the decision you actually make each
+morning: a **Today** page with live run progress and a ranked shortlist whose
+cards show *why* (the deterministic score and the model's rating side by side,
+what fits, the biggest gap); a **tabbed job drawer** (overview · analysis ·
+documents · cover letter · posting) with the full score breakdown and source
+snippets; **LLM cover-letter generation → editable → `.docx` download**; a
+**drag-and-drop tracker**; a per-run **Activity** digest (in-app only — no
+email/Telegram); a **Runs** inspector that explains each stage; an optional
+**eligibility** ledger; and a **calibration** panel that retunes the score
+weights from your 👍/👎 and tracker outcomes.
+`findmyjob pipeline run` (or `POST /api/runs`, or the daily scheduler)
 executes: `fetch` (Bundesagentur für Arbeit, Adzuna, Arbeitnow, The Muse + the
 public ATS boards of curated employers) → `normalize` → `enrich` (robots-aware)
 → `dedup` (canonical-key + local embeddings) → `prefilter` (cheap hard filters)

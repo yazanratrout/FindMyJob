@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   AlarmClock,
+  AlertTriangle,
   Briefcase,
   Clock,
   Euro,
@@ -246,6 +248,22 @@ export function DashboardPage() {
       </header>
 
       <LiveRunBanner />
+
+      {latestRun.data &&
+        latestRun.data.status !== "running" &&
+        latestRun.data.error_count > 0 && (
+          <Callout tone="warn" icon={AlertTriangle}>
+            <span className="font-medium">
+              Run #{latestRun.data.id} finished with {latestRun.data.error_count}{" "}
+              error{latestRun.data.error_count > 1 ? "s" : ""}.
+            </span>{" "}
+            Some sources or postings were skipped, so today's list may be short —{" "}
+            <Link to="/runs" className="underline">
+              see what failed
+            </Link>
+            .
+          </Callout>
+        )}
 
       {(followUps.data?.length ?? 0) > 0 && (
         <Callout tone="warn" icon={AlarmClock}>

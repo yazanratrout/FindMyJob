@@ -25,7 +25,14 @@ class DecidePipeline(Pipeline):
         res = self.result()
         with ctx.session() as session:
             have_types = {d.type.value for d in session.exec(select(Document)).all()}
-            scores = session.exec(select(JobScore).where(col(JobScore.run_id) == ctx.run_id)).all()
+            # Only jobs still in the running need a documents checklist - a
+            # hard-failed job is archived and will never be applied to.
+            scores = session.exec(
+                select(JobScore).where(
+                    col(JobScore.run_id) == ctx.run_id,
+                    col(JobScore.hard_pass).is_(True),
+                )
+            ).all()
 
             for score in scores:
                 try:
