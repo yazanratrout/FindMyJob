@@ -17,14 +17,12 @@ class AshbySource(AtsSource):
     ats_type: ClassVar[str] = "ashby"
 
     async def fetch(self, query: SourceQuery) -> list[RawJob]:
-        jobs: list[RawJob] = []
-        for company in self.companies:
+        async def _one(company: CompanyRef) -> list[RawJob]:
             payload = await self._http.get_json(_URL.format(slug=company.ats_slug))
-            for item in payload.get("jobs", []):
-                raw = self._to_raw_job(item, company)
-                if raw is not None and self._keep(raw, query):
-                    jobs.append(raw)
-        return jobs[: query.limit_per_source]
+            out = [self._to_raw_job(item, company) for item in payload.get("jobs", [])]
+            return [r for r in out if r is not None and self._keep(r, query)]
+
+        return await self._collect(query, _one)
 
     def _to_raw_job(self, item: dict[str, Any], company: CompanyRef) -> RawJob | None:
         job_id, title = item.get("id"), item.get("title")

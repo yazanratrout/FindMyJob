@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from typing import ClassVar
 
 from findmyjob.config import Settings
@@ -67,3 +68,29 @@ class AtsSource(JobSource):
 
     def _keep(self, raw: RawJob, query: SourceQuery) -> bool:
         return keep_posting(raw, query)
+
+    async def _collect(
+        self,
+        query: SourceQuery,
+        fetch_company: Callable[[CompanyRef], Awaitable[list[RawJob]]],
+    ) -> list[RawJob]:
+        """Run ``fetch_company`` for each curated company, one bad slug at a time.
+
+        A dead / stale slug (404, a redirect to the vendor's marketing site, a
+        429) is logged and skipped - it never fails the connector for the other
+        companies.
+        """
+        jobs: list[RawJob] = []
+        for company in self.companies:
+            if len(jobs) >= query.limit_per_source:
+                break
+            try:
+                jobs.extend(await fetch_company(company))
+            except Exception as exc:  # contain per-company failure
+                log.warning(
+                    "ats.company_failed",
+                    source=self.key,
+                    slug=company.ats_slug,
+                    error=str(exc),
+                )
+        return jobs[: query.limit_per_source]

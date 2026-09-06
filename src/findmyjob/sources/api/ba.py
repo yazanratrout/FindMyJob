@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from typing import Any, ClassVar
 
+import httpx
+
 from findmyjob.logging import get_logger
 from findmyjob.sources._parsing import is_recent, parse_datetime
 from findmyjob.sources.base import JobSource, RawJob, SourceQuery
@@ -48,9 +50,17 @@ class BundesagenturSource(JobSource):
             if arbeitszeit:
                 params["arbeitszeit"] = ";".join(arbeitszeit)
 
-            payload = await self._http.get_json(
-                _SEARCH_URL, params=params, headers={"X-API-Key": _API_KEY}
-            )
+            try:
+                payload = await self._http.get_json(
+                    _SEARCH_URL, params=params, headers={"X-API-Key": _API_KEY}
+                )
+            except httpx.HTTPStatusError as exc:
+                # The BA search returns 403 ("No match found for request") or 404
+                # when a keyword yields zero hits - not an error, just no results.
+                if exc.response.status_code in (403, 404):
+                    log.info("ba.no_results", keyword=keyword)
+                    continue
+                raise
             for item in payload.get("stellenangebote", []):
                 raw = self._to_raw_job(item)
                 if raw is None or raw.source_job_id in seen:

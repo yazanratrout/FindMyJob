@@ -5,6 +5,17 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### Source robustness (from a real run)
+- **ATS connectors: per-company error containment.** A stale slug (404, a
+  redirect to the vendor's marketing site, a 429) is now logged and skipped -
+  it no longer sinks the whole connector for the other curated companies.
+  `AtsSource._collect`; greenhouse / lever / personio / smartrecruiters / ashby
+  refactored onto it.
+- **Bundesagentur:** a 403/404 ("No match found for request") for a keyword is
+  treated as zero results, not an error - the BA source used to fail the run
+  whenever one keyword had no hits.
+- 2 new tests.
+
 ### OpenAI-compatible LLM provider
 - `LLM_PROVIDER=openai` + `LLM_OPENAI_BASE_URL` (+ optional `LLM_OPENAI_API_KEY`)
   routes every model call to any OpenAI-style `/chat/completions` endpoint -

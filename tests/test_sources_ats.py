@@ -173,6 +173,51 @@ async def test_smartrecruiters(http: HttpClient):
     await http.aclose()
 
 
+@respx.mock
+async def test_one_dead_slug_does_not_sink_the_connector(http: HttpClient):
+    # gone: redirects to the vendor marketing site which 429s (the real symptom)
+    respx.get("https://boards-api.greenhouse.io/v1/boards/gone/jobs").mock(
+        return_value=httpx.Response(429, text="slow down")
+    )
+    respx.get("https://boards-api.greenhouse.io/v1/boards/celonis/jobs").mock(
+        return_value=httpx.Response(
+            200,
+            json={
+                "jobs": [
+                    {
+                        "id": 7,
+                        "title": "Werkstudent Data",
+                        "absolute_url": "https://boards.greenhouse.io/celonis/jobs/7",
+                        "location": {"name": "Munich"},
+                        "updated_at": RECENT_ISO,
+                        "content": "SQL",
+                    }
+                ]
+            },
+        )
+    )
+    src = GreenhouseSource(
+        Settings(),
+        http,
+        [_company("greenhouse", "gone"), _company("greenhouse", "celonis")],
+    )
+    jobs = await src.fetch(QUERY)
+    assert [j.source_job_id for j in jobs] == ["celonis:7"]  # good company still returned
+    await http.aclose()
+
+
+@respx.mock
+async def test_ba_403_no_results_is_not_an_error(http: HttpClient):
+    from findmyjob.sources.api import BundesagenturSource
+
+    respx.get("https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs").mock(
+        return_value=httpx.Response(403, json={"messages": [{"text": "No match found"}]})
+    )
+    jobs = await BundesagenturSource(Settings(), http).fetch(QUERY)
+    assert jobs == []
+    await http.aclose()
+
+
 def test_ats_source_unconfigured_without_matching_companies():
     http = HttpClient(min_interval_s=0.0)
     src = GreenhouseSource(Settings(), http, [_company("lever", "x")])

@@ -17,8 +17,8 @@ class SmartRecruitersSource(AtsSource):
     ats_type: ClassVar[str] = "smartrecruiters"
 
     async def fetch(self, query: SourceQuery) -> list[RawJob]:
-        jobs: list[RawJob] = []
-        for company in self.companies:
+        async def _one(company: CompanyRef) -> list[RawJob]:
+            found: list[RawJob] = []
             offset = 0
             for _ in range(4):
                 payload = await self._http.get_json(
@@ -29,11 +29,13 @@ class SmartRecruitersSource(AtsSource):
                 for item in content:
                     raw = self._to_raw_job(item, company)
                     if raw is not None and self._keep(raw, query):
-                        jobs.append(raw)
+                        found.append(raw)
                 if len(content) < 100:
                     break
                 offset += 100
-        return jobs[: query.limit_per_source]
+            return found
+
+        return await self._collect(query, _one)
 
     def _to_raw_job(self, item: dict[str, Any], company: CompanyRef) -> RawJob | None:
         job_id, title = item.get("id"), item.get("name")

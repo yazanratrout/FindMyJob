@@ -19,18 +19,16 @@ class PersonioSource(AtsSource):
     ats_type: ClassVar[str] = "personio"
 
     async def fetch(self, query: SourceQuery) -> list[RawJob]:
-        jobs: list[RawJob] = []
-        for company in self.companies:
+        async def _one(company: CompanyRef) -> list[RawJob]:
             xml = await self._http.get_text(_URL.format(slug=company.ats_slug))
             try:
                 root = ElementTree.fromstring(xml)
             except ElementTree.ParseError:
-                continue
-            for position in root.iter("position"):
-                raw = self._to_raw_job(position, company)
-                if raw is not None and self._keep(raw, query):
-                    jobs.append(raw)
-        return jobs[: query.limit_per_source]
+                return []
+            out = [self._to_raw_job(p, company) for p in root.iter("position")]
+            return [r for r in out if r is not None and self._keep(r, query)]
+
+        return await self._collect(query, _one)
 
     def _to_raw_job(self, position: ElementTree.Element, company: CompanyRef) -> RawJob | None:
         job_id = position.findtext("id")
