@@ -5,6 +5,33 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### UI rework — make the daily loop obvious
+The backend was complete but the UI didn't guide the one thing you do every
+morning: decide what's worth applying to.
+
+- **Design system** (`components/ui.tsx`): `Button` (4 variants, sizes, loading,
+  icons), `Badge`/`Callout` with a fixed decision colour language, `ScoreRing`,
+  `Meter`, `Stat`, `Tabs`, `Chip`, `Skeleton`, `EmptyState`, `Textarea`.
+  `lucide-react` added for icons (the only new frontend dependency).
+- **Dashboard → "Today"**: live run banner with stage progress, follow-ups
+  callout, four headline stats, bucket chips with counts, collapsible filters
+  (source / contract / age / has-salary), and job cards that show *why* — the
+  rules score and the model score side by side, plus fits/gaps — so you rarely
+  have to open the drawer to triage.
+- **Job drawer → tabbed** (Overview · Analysis · Documents · Cover letter ·
+  Posting) with a sticky header, big score ring, labelled score breakdown with
+  meters, and Esc-to-close. Was one long scroll of six stacked sections.
+- **Tracker → real drag and drop** between columns (CP20 specified this; it had
+  only a `<select>`). Native HTML5 DnD, no new dependency; cards expand for
+  status/follow-up/notes so it stays keyboard-usable.
+- **Settings → sectioned** with a side nav and per-section explanations instead
+  of one wall of every onboarding step; unsaved-changes indicator.
+- **Runs**: per-stage rows with icons, plain-English descriptions of what each
+  stage does, and readable stat chips.
+- **Activity**: score rings on digest items, decision badges, real empty state.
+- `useLatestRun()` polls while a run is in progress and refreshes the job list
+  when it lands, so the app updates itself during a run.
+
 ### LLM free-tier viability (from a real Groq run)
 - `_openai_compatible_call` honours a `429` `Retry-After` (header or the
   "try again in Ns" hint in the body) and pauses up to a 75 s cap, then gives

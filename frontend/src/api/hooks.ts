@@ -87,6 +87,28 @@ export function useRuns() {
   return useQuery({ queryKey: keys.runs, queryFn: () => api.get<RunSummary[]>("/runs") });
 }
 
+/**
+ * The most recent run, polled fast while it is in progress so the whole app can
+ * show live pipeline status (and refresh job lists when it lands).
+ */
+export function useLatestRun() {
+  const qc = useQueryClient();
+  return useQuery({
+    queryKey: ["runs", "latest"],
+    queryFn: async () => {
+      const runs = await api.get<RunSummary[]>("/runs?limit=1");
+      const run = runs[0] ?? null;
+      if (run && run.status !== "running") {
+        // a run just finished -> pull in the jobs/digests it produced
+        qc.invalidateQueries({ queryKey: ["jobs"] });
+        qc.invalidateQueries({ queryKey: ["digests"] });
+      }
+      return run;
+    },
+    refetchInterval: (query) => (query.state.data?.status === "running" ? 2000 : 20_000),
+  });
+}
+
 export function useRunDetail(id: number | null) {
   return useQuery({
     queryKey: ["run", id],
