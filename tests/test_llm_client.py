@@ -86,6 +86,51 @@ def test_openai_compatible_provider(monkeypatch):
     assert sent.headers["authorization"] == "Bearer gsk_x"
 
 
+def test_openai_429_is_retried(monkeypatch):
+    import httpx
+    import respx
+
+    from findmyjob.config import get_settings
+    from findmyjob.llm import client as client_mod
+
+    s = get_settings()
+    monkeypatch.setattr(s, "llm_provider", "openai")
+    monkeypatch.setattr(s, "llm_openai_base_url", "https://llm.test/v1")
+    monkeypatch.setattr(s, "llm_min_interval_s", 0.0)
+    monkeypatch.setattr(client_mod.time, "sleep", lambda _s: None)  # don't actually wait
+
+    calls = {"n": 0}
+
+    def _responder(_request: httpx.Request) -> httpx.Response:
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return httpx.Response(
+                429, json={"error": {"message": "rate limited", "retryDelay": "3s"}}
+            )
+        return httpx.Response(200, json={"choices": [{"message": {"content": "hi"}}], "usage": {}})
+
+    with respx.mock:
+        respx.post("https://llm.test/v1/chat/completions").mock(side_effect=_responder)
+        res = LlmClient().complete(purpose=LlmPurpose.ANALYZE, system="s", user="u")
+
+    assert calls["n"] == 2  # one 429, then success
+    assert res.text == "hi"
+
+
+def test_retry_after_parsing():
+    from findmyjob.llm.client import _retry_after_seconds
+
+    class R:
+        def __init__(self, headers, text):
+            self.headers = headers
+            self.text = text
+
+    assert _retry_after_seconds(R({"retry-after": "12"}, ""), 0) == 12.0
+    assert _retry_after_seconds(R({}, "please try again in 4.5s"), 0) == 5.5
+    assert _retry_after_seconds(R({}, '"retryDelay": "7s"'), 0) == 8.0
+    assert _retry_after_seconds(R({}, "no hint"), 1) == 4.0  # exponential fallback
+
+
 def test_injected_api_fn_overrides_offline(monkeypatch):
     from findmyjob.config import get_settings
 

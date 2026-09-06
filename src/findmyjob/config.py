@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     llm_provider: str = Field(default="anthropic", alias="LLM_PROVIDER")
     llm_openai_base_url: str | None = Field(default=None, alias="LLM_OPENAI_BASE_URL")
     llm_openai_api_key: str | None = Field(default=None, alias="LLM_OPENAI_API_KEY")
+    #: min seconds between OpenAI-compatible calls - paces free tiers under their
+    #: requests/tokens-per-minute limits. 0 for Anthropic / paid endpoints.
+    llm_min_interval_s: float = Field(default=1.5, alias="LLM_MIN_INTERVAL_S")
     llm_model_cheap: str = Field(default="claude-haiku-4-5-20251001", alias="LLM_MODEL_CHEAP")
     llm_model_smart: str = Field(default="claude-sonnet-5", alias="LLM_MODEL_SMART")
     llm_monthly_budget_eur: float = Field(default=10.0, alias="LLM_MONTHLY_BUDGET_EUR")

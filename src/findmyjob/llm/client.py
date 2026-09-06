@@ -17,6 +17,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal, TypeVar
@@ -85,12 +86,17 @@ def _anthropic_call(
     )
 
 
-_RETRY_AFTER_RE = re.compile(r"try again in ([0-9.]+)\s*s", re.IGNORECASE)
+_RETRY_AFTER_RE = re.compile(
+    r"(?:try again in|retryDelay\"?:?\s*\")\s*([0-9.]+)\s*s", re.IGNORECASE
+)
 _MAX_RATE_LIMIT_WAIT = 75.0  # give up rather than stall a run for minutes
+#: minimum gap between OpenAI-compatible calls this process makes - free tiers
+#: throttle bursts on requests- *and* tokens-per-minute. Overridable via env.
+_openai_last_call = 0.0
 
 
-def _retry_after_seconds(resp: Any) -> float | None:
-    """How long a 429 asks us to wait: the header, or the hint in the body."""
+def _retry_after_seconds(resp: Any, attempt: int) -> float:
+    """How long to wait after a 429: the header / body hint, else exponential."""
     header = resp.headers.get("retry-after")
     if header:
         try:
@@ -99,8 +105,8 @@ def _retry_after_seconds(resp: Any) -> float | None:
             pass
     match = _RETRY_AFTER_RE.search(resp.text or "")
     if match:
-        return min(float(match.group(1)) + 0.5, _MAX_RATE_LIMIT_WAIT)
-    return None
+        return min(float(match.group(1)) + 1.0, _MAX_RATE_LIMIT_WAIT)
+    return float(min(2.0 * (2**attempt), _MAX_RATE_LIMIT_WAIT))  # 2, 4, 8, ...
 
 
 def _openai_compatible_call(
@@ -112,8 +118,6 @@ def _openai_compatible_call(
     Ollama with no key works. Honours a 429 ``Retry-After`` (free tiers rate-limit
     aggressively) up to a cap, then gives up so a run cannot stall for minutes.
     """
-    import time
-
     import httpx
 
     settings = get_settings()
@@ -133,15 +137,21 @@ def _openai_compatible_call(
         ],
     }
     url = f"{base}/chat/completions"
-    for attempt in range(4):
+
+    global _openai_last_call
+    gap = settings.llm_min_interval_s - (time.monotonic() - _openai_last_call)
+    if gap > 0:
+        time.sleep(gap)
+
+    for attempt in range(5):
         try:
             resp = httpx.post(url, json=payload, headers=headers, timeout=120.0)
-            if resp.status_code == 429 and attempt < 3:
-                wait = _retry_after_seconds(resp)
-                if wait is not None:
-                    log.info("llm.rate_limited", model=model, wait_s=round(wait, 1))
-                    time.sleep(wait)
-                    continue
+            _openai_last_call = time.monotonic()
+            if resp.status_code == 429 and attempt < 4:
+                wait = _retry_after_seconds(resp, attempt)
+                log.info("llm.rate_limited", model=model, wait_s=round(wait, 1), attempt=attempt)
+                time.sleep(wait)
+                continue
             resp.raise_for_status()
             data = resp.json()
             break
