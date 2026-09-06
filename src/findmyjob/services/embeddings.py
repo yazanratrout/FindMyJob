@@ -17,7 +17,9 @@ from findmyjob.logging import get_logger
 
 log = get_logger("embeddings")
 
-DEFAULT_MODEL = "intfloat/multilingual-e5-small"  # 384-dim, DE + EN
+# 384-dim, German + English, ONNX/CPU. Matches the model named in the plan and
+# is present in fastembed's supported list.
+DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
 
 @runtime_checkable
