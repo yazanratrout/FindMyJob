@@ -54,7 +54,7 @@ def _user_message(*, title: str, company: str, city: str, jd_text: str) -> str:
         f"Company: {company or 'unknown'}\n"
         f"Title: {title}\n"
         f"Target city (for context only): {city or 'n/a'}\n\n"
-        f"--- POSTING ---\n{jd_text.strip()[:12000]}"
+        f"--- POSTING ---\n{jd_text.strip()[:9000]}"
     )
 
 
@@ -74,6 +74,6 @@ def analyze_posting(
         user=_user_message(title=title, company=company, city=city, jd_text=jd_text),
         schema=JobAnalysisResult,
         tier="cheap",
-        max_tokens=2048,
+        max_tokens=1536,
         run_id=run_id,
     )

@@ -78,18 +78,21 @@ LLM_MODEL_CHEAP=llama-3.1-8b-instant
 LLM_MODEL_SMART=llama-3.3-70b-versatile
 ```
 
-Other endpoints that work the same way:
+Endpoints that work the same way (check each provider's current model list — they
+rename models often):
 
-| Provider | `LLM_OPENAI_BASE_URL` | Models | Key |
+| Provider | `LLM_OPENAI_BASE_URL` | Key | Free-tier fit |
 |---|---|---|---|
-| **Groq** | `https://api.groq.com/openai/v1` | `llama-3.1-8b-instant` / `llama-3.3-70b-versatile` | free, `console.groq.com` |
-| **Google Gemini** | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` / `gemini-2.5-flash` | free, `aistudio.google.com/apikey` |
-| **Cerebras** | `https://api.cerebras.ai/v1` | `llama-3.3-70b` | free, `cloud.cerebras.ai` |
-| **Ollama (local)** | `http://localhost:11434/v1` | `qwen2.5:7b`, `llama3.1:8b`, ... | none — `ollama pull <model>` first |
+| **Google Gemini** | `https://generativelanguage.googleapis.com/v1beta/openai` | free, `aistudio.google.com/apikey` | **best** — ~1M tokens/min, comfortably analyses a whole run |
+| **Groq** | `https://api.groq.com/openai/v1` | free, `console.groq.com/keys` | tight — most models cap at 8k tokens/min; use a higher-limit one like `groq/compound-mini` and expect the odd pause |
+| **Cerebras** | `https://api.cerebras.ai/v1` | free, `cloud.cerebras.ai` | moderate |
+| **Ollama (local)** | `http://localhost:11434/v1` | none — `ollama pull <model>` first | unlimited, slower, needs RAM |
 
-Spend is tracked as €0 for these (they're billed on their own free quota, if at
-all). Quality is lower than Claude for the JSON-extraction prompts, but the
-pipeline handles malformed JSON with a repair retry.
+A single daily run analyses 40-90 postings at a few thousand tokens each. The
+client honours a `429 Retry-After` and pauses, so a tight free tier still
+finishes - it just takes longer. Spend is recorded as €0 (billed on the
+provider's own quota, if at all). Quality is below Claude on the JSON-extraction
+prompts; the client retries once on malformed JSON.
 
 **3. Anthropic (Claude) — best quality.**
 `LLM_PROVIDER=anthropic`, `ANTHROPIC_API_KEY=sk-ant-...`, `LLM_OFFLINE=false`.
@@ -155,7 +158,7 @@ the Anthropic API. Nothing is shared or uploaded anywhere else.
 
 | Symptom | Fix |
 |---|---|
-| `ModuleNotFoundError: No module named 'findmyjob'` (macOS) | `just fix-venv` — Python 3.13 skips `.pth` files if `.venv` has the macOS *hidden* flag; this clears it. |
+| `ModuleNotFoundError: No module named 'findmyjob'` (macOS) | `just fix-venv` — Python 3.13 skips `.pth` files if `.venv` has the macOS _hidden_ flag; this clears it. |
 | Dashboard empty after a run | every job was hard-filtered or bucketed as _archived_ — loosen thresholds / hours / recency in **Settings**, or check the run's errors on the **Runs** tab. |
 | `LLM ... call failed` / malformed JSON | free models sometimes return bad JSON; the repair retry usually covers it. Persistent failures: try the other model tier or a different provider. |
 | `models fetch` fails | offline, or Hugging Face rate-limited - dedup's semantic tier just skips; retry later. |

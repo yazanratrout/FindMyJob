@@ -5,6 +5,18 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### LLM free-tier viability (from a real Groq run)
+- `_openai_compatible_call` honours a `429` `Retry-After` (header or the
+  "try again in Ns" hint in the body) and pauses up to a 75 s cap, then gives
+  up - so a tight free tier (Groq's 8k tokens/min) finishes a run instead of
+  erroring out on every call. `llm.rate_limited` is logged.
+- Analyzer trimmed: JD context 12k -> 9k chars, `max_tokens` 2048 -> 1536 -
+  smaller calls, cheaper on every provider, and far more free-tier runs fit.
+- USER_GUIDE: Gemini is the recommended free provider (its per-minute budget
+  actually covers a run); Groq works but is slow on most models.
+- `pyproject.toml` `pytest pythonpath = ["src"]` so bare `pytest` works even
+  when the editable-install `.pth` is skipped (macOS hidden `.venv`).
+
 ### Source robustness (from a real run)
 - **ATS connectors: per-company error containment.** A stale slug (404, a
   redirect to the vendor's marketing site, a 429) is now logged and skipped -

@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, Literal, TypeVar
@@ -84,14 +85,35 @@ def _anthropic_call(
     )
 
 
+_RETRY_AFTER_RE = re.compile(r"try again in ([0-9.]+)\s*s", re.IGNORECASE)
+_MAX_RATE_LIMIT_WAIT = 75.0  # give up rather than stall a run for minutes
+
+
+def _retry_after_seconds(resp: Any) -> float | None:
+    """How long a 429 asks us to wait: the header, or the hint in the body."""
+    header = resp.headers.get("retry-after")
+    if header:
+        try:
+            return min(float(header), _MAX_RATE_LIMIT_WAIT)
+        except ValueError:
+            pass
+    match = _RETRY_AFTER_RE.search(resp.text or "")
+    if match:
+        return min(float(match.group(1)) + 0.5, _MAX_RATE_LIMIT_WAIT)
+    return None
+
+
 def _openai_compatible_call(
     model: str, system: str, user: str, max_tokens: int, temperature: float
 ) -> RawCompletion:
     """Any OpenAI-style ``/chat/completions`` endpoint (Groq, Gemini shim, Ollama...).
 
     Uses ``httpx`` directly - no extra dependency. Auth is optional so a local
-    Ollama with no key works.
+    Ollama with no key works. Honours a 429 ``Retry-After`` (free tiers rate-limit
+    aggressively) up to a cap, then gives up so a run cannot stall for minutes.
     """
+    import time
+
     import httpx
 
     settings = get_settings()
@@ -110,15 +132,26 @@ def _openai_compatible_call(
             {"role": "user", "content": user},
         ],
     }
-    try:
-        resp = httpx.post(f"{base}/chat/completions", json=payload, headers=headers, timeout=120.0)
-        resp.raise_for_status()
-        data = resp.json()
-    except httpx.HTTPStatusError as exc:
-        body = exc.response.text[:300]
-        raise LlmError(f"{model}: HTTP {exc.response.status_code} - {body}") from exc
-    except httpx.HTTPError as exc:
-        raise LlmError(f"{model}: request failed - {exc}") from exc
+    url = f"{base}/chat/completions"
+    for attempt in range(4):
+        try:
+            resp = httpx.post(url, json=payload, headers=headers, timeout=120.0)
+            if resp.status_code == 429 and attempt < 3:
+                wait = _retry_after_seconds(resp)
+                if wait is not None:
+                    log.info("llm.rate_limited", model=model, wait_s=round(wait, 1))
+                    time.sleep(wait)
+                    continue
+            resp.raise_for_status()
+            data = resp.json()
+            break
+        except httpx.HTTPStatusError as exc:
+            body = exc.response.text[:300]
+            raise LlmError(f"{model}: HTTP {exc.response.status_code} - {body}") from exc
+        except httpx.HTTPError as exc:
+            raise LlmError(f"{model}: request failed - {exc}") from exc
+    else:
+        raise LlmError(f"{model}: still rate-limited after retries")
 
     try:
         text = data["choices"][0]["message"]["content"] or ""

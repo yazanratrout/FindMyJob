@@ -68,6 +68,9 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "-ra -q"
+# so `pytest` finds the package even if the editable-install .pth is skipped
+# (macOS "hidden" .venv + Python 3.13) - see `just fix-venv`
+pythonpath = ["src"]
 filterwarnings = ["error::DeprecationWarning:findmyjob.*"]
 markers = [
     "slow: end-to-end / orchestrator integration test (run with `just test-all`)",
