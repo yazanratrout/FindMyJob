@@ -57,14 +57,44 @@ you through it:
 
 Everything is saved between sessions and re-editable later from **Settings**.
 
-### Trying it without an Anthropic key
+### Running the LLM steps
 
-Set `LLM_OFFLINE=true` in `.env` to click through the whole app with **no API
-key and zero cost**: CV parsing, keyword suggestions, job analysis, the judge and
-cover-letter generation all return canned, schema-valid placeholder data. It
-proves the plumbing (scoring, buckets, the DOCX export, the tracker) works
-end to end. The text is obviously fake - swap in a real
-`ANTHROPIC_API_KEY` (and set `LLM_OFFLINE=false`) for actual results.
+Three ways, in `.env`:
+
+**1. Offline stub — no key, no network, zero cost.**
+`LLM_OFFLINE=true`. CV parsing, keyword suggestions, analysis, judge and
+cover-letter generation return canned, schema-valid placeholder data. Proves the
+plumbing (scoring, buckets, DOCX export, tracker) end to end; the text is fake.
+
+**2. A free / non-Anthropic model — real output, no Anthropic bill.**
+Point the client at any OpenAI-compatible `/chat/completions` endpoint:
+
+```ini
+LLM_OFFLINE=false
+LLM_PROVIDER=openai
+LLM_OPENAI_BASE_URL=https://api.groq.com/openai/v1     # Groq: free, fast, needs a free account
+LLM_OPENAI_API_KEY=gsk_...                             # from console.groq.com/keys
+LLM_MODEL_CHEAP=llama-3.1-8b-instant
+LLM_MODEL_SMART=llama-3.3-70b-versatile
+```
+
+Other endpoints that work the same way:
+
+| Provider | `LLM_OPENAI_BASE_URL` | Models | Key |
+|---|---|---|---|
+| **Groq** | `https://api.groq.com/openai/v1` | `llama-3.1-8b-instant` / `llama-3.3-70b-versatile` | free, `console.groq.com` |
+| **Google Gemini** | `https://generativelanguage.googleapis.com/v1beta/openai` | `gemini-2.0-flash` / `gemini-2.5-flash` | free, `aistudio.google.com/apikey` |
+| **Cerebras** | `https://api.cerebras.ai/v1` | `llama-3.3-70b` | free, `cloud.cerebras.ai` |
+| **Ollama (local)** | `http://localhost:11434/v1` | `qwen2.5:7b`, `llama3.1:8b`, ... | none — `ollama pull <model>` first |
+
+Spend is tracked as €0 for these (they're billed on their own free quota, if at
+all). Quality is lower than Claude for the JSON-extraction prompts, but the
+pipeline handles malformed JSON with a repair retry.
+
+**3. Anthropic (Claude) — best quality.**
+`LLM_PROVIDER=anthropic`, `ANTHROPIC_API_KEY=sk-ant-...`, `LLM_OFFLINE=false`.
+New accounts get trial credit; a full run costs a few cents (Haiku for bulk,
+content-hash cache, `LLM_MONTHLY_BUDGET_EUR` hard stop).
 
 ## Daily use
 
@@ -120,3 +150,14 @@ the Anthropic API. Nothing is shared or uploaded anywhere else.
 - A passphrase gate protects the UI _(CP15)_.
 - No automated application submission — you always submit yourself.
 - Sources are allowlisted: no LinkedIn / StepStone / Indeed scraping.
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `ModuleNotFoundError: No module named 'findmyjob'` (macOS) | `just fix-venv` — Python 3.13 skips `.pth` files if `.venv` has the macOS *hidden* flag; this clears it. |
+| Dashboard empty after a run | every job was hard-filtered or bucketed as _archived_ — loosen thresholds / hours / recency in **Settings**, or check the run's errors on the **Runs** tab. |
+| `LLM ... call failed` / malformed JSON | free models sometimes return bad JSON; the repair retry usually covers it. Persistent failures: try the other model tier or a different provider. |
+| `models fetch` fails | offline, or Hugging Face rate-limited - dedup's semantic tier just skips; retry later. |
+| Port 8000 in use | set `APP_PORT=8001` in `.env`. |
+| Editor flags `tsconfig.json` | cosmetic; reload the window. |

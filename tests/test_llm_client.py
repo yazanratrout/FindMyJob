@@ -51,6 +51,41 @@ def test_offline_mode_returns_canned_schema_valid_json(monkeypatch):
         assert all(c.cost_eur == 0.0 for c in s.exec(select(LlmCall)).all())
 
 
+def test_openai_compatible_provider(monkeypatch):
+    import httpx
+    import respx
+
+    from findmyjob.config import get_settings
+
+    s = get_settings()
+    monkeypatch.setattr(s, "llm_provider", "openai")
+    monkeypatch.setattr(s, "llm_openai_base_url", "https://api.groq.test/openai/v1")
+    monkeypatch.setattr(s, "llm_openai_api_key", "gsk_x")
+    monkeypatch.setattr(s, "llm_model_cheap", "llama-3.1-8b-instant")
+
+    with respx.mock:
+        route = respx.post("https://api.groq.test/openai/v1/chat/completions").mock(
+            return_value=httpx.Response(
+                200,
+                json={
+                    "choices": [{"message": {"content": '{"name": "x", "score": 3}'}}],
+                    "usage": {"prompt_tokens": 12, "completion_tokens": 4},
+                },
+            )
+        )
+        client = LlmClient()
+        shape, res = client.complete_json(
+            purpose=LlmPurpose.ANALYZE, system="s", user="u", schema=Shape
+        )
+
+    assert route.called
+    assert shape.name == "x" and shape.score == 3
+    assert res.cost_eur == 0.0  # non-anthropic provider is billed elsewhere
+    assert res.model == "llama-3.1-8b-instant"
+    sent = route.calls[0].request
+    assert sent.headers["authorization"] == "Bearer gsk_x"
+
+
 def test_injected_api_fn_overrides_offline(monkeypatch):
     from findmyjob.config import get_settings
 

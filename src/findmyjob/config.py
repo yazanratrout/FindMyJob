@@ -38,9 +38,14 @@ class Settings(BaseSettings):
 
     # ---- LLM -------------------------------------------------------------
     anthropic_api_key: str | None = Field(default=None, alias="ANTHROPIC_API_KEY")
-    #: Skip every Anthropic call and return canned, schema-valid responses.
+    #: Skip every model call and return canned, schema-valid responses.
     #: For clicking through the app with no API key / zero cost. Not for real use.
     llm_offline: bool = Field(default=False, alias="LLM_OFFLINE")
+    #: "anthropic" (default) or "openai" — any OpenAI-compatible /chat/completions
+    #: endpoint (Groq, Gemini's OpenAI shim, Cerebras, a local Ollama, ...).
+    llm_provider: str = Field(default="anthropic", alias="LLM_PROVIDER")
+    llm_openai_base_url: str | None = Field(default=None, alias="LLM_OPENAI_BASE_URL")
+    llm_openai_api_key: str | None = Field(default=None, alias="LLM_OPENAI_API_KEY")
     llm_model_cheap: str = Field(default="claude-haiku-4-5-20251001", alias="LLM_MODEL_CHEAP")
     llm_model_smart: str = Field(default="claude-sonnet-5", alias="LLM_MODEL_SMART")
     llm_monthly_budget_eur: float = Field(default=10.0, alias="LLM_MONTHLY_BUDGET_EUR")

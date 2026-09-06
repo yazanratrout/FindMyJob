@@ -84,6 +84,58 @@ def _anthropic_call(
     )
 
 
+def _openai_compatible_call(
+    model: str, system: str, user: str, max_tokens: int, temperature: float
+) -> RawCompletion:
+    """Any OpenAI-style ``/chat/completions`` endpoint (Groq, Gemini shim, Ollama...).
+
+    Uses ``httpx`` directly - no extra dependency. Auth is optional so a local
+    Ollama with no key works.
+    """
+    import httpx
+
+    settings = get_settings()
+    base = (settings.llm_openai_base_url or "").rstrip("/")
+    if not base:
+        raise LlmError("LLM_OPENAI_BASE_URL is not set (LLM_PROVIDER=openai)")
+    headers = {"content-type": "application/json"}
+    if settings.llm_openai_api_key:
+        headers["authorization"] = f"Bearer {settings.llm_openai_api_key}"
+    payload = {
+        "model": model,
+        "temperature": temperature,
+        "max_tokens": max_tokens,
+        "messages": [
+            {"role": "system", "content": system},
+            {"role": "user", "content": user},
+        ],
+    }
+    try:
+        resp = httpx.post(f"{base}/chat/completions", json=payload, headers=headers, timeout=120.0)
+        resp.raise_for_status()
+        data = resp.json()
+    except httpx.HTTPStatusError as exc:
+        body = exc.response.text[:300]
+        raise LlmError(f"{model}: HTTP {exc.response.status_code} - {body}") from exc
+    except httpx.HTTPError as exc:
+        raise LlmError(f"{model}: request failed - {exc}") from exc
+
+    try:
+        text = data["choices"][0]["message"]["content"] or ""
+    except (KeyError, IndexError, TypeError) as exc:
+        raise LlmError(f"{model}: unexpected response shape - {str(data)[:300]}") from exc
+    usage = data.get("usage") or {}
+    return RawCompletion(
+        text=text,
+        input_tokens=int(usage.get("prompt_tokens", 0)),
+        output_tokens=int(usage.get("completion_tokens", 0)),
+    )
+
+
+def _default_api_fn(settings: Settings) -> ApiFn:
+    return _openai_compatible_call if settings.llm_provider == "openai" else _anthropic_call
+
+
 class LlmClient:
     def __init__(
         self,
@@ -94,7 +146,7 @@ class LlmClient:
         self._settings = settings or get_settings()
         #: offline stub mode — only when nobody injected a real/fake api_fn
         self._offline = api_fn is None and self._settings.llm_offline
-        self._api_fn = api_fn or _anthropic_call
+        self._api_fn = api_fn or _default_api_fn(self._settings)
 
     # ---- public API -------------------------------------------------
 
@@ -230,6 +282,10 @@ class LlmClient:
         return self._settings.llm_model_smart if tier == "smart" else self._settings.llm_model_cheap
 
     def _cost(self, tier: Tier, input_tokens: int, output_tokens: int) -> float:
+        # The price table is Anthropic's; an OpenAI-compatible endpoint (often a
+        # free tier) is billed elsewhere, so record 0 and let its own quota apply.
+        if self._settings.llm_provider != "anthropic":
+            return 0.0
         if tier == "smart":
             price_in, price_out = (
                 self._settings.llm_price_smart_in,

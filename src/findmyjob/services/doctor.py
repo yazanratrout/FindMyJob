@@ -86,9 +86,17 @@ def _migrations() -> Check:
 def _anthropic_key() -> Check:
     settings = get_settings()
     if settings.llm_offline:
-        return Check("ANTHROPIC_API_KEY set", True, "LLM_OFFLINE=true - using canned responses")
+        return Check("LLM configured", True, "LLM_OFFLINE=true - using canned responses")
+    if settings.llm_provider == "openai":
+        ok = bool(settings.llm_openai_base_url)
+        detail = (
+            f"OpenAI-compatible: {settings.llm_openai_base_url}"
+            if ok
+            else "LLM_PROVIDER=openai but LLM_OPENAI_BASE_URL is not set"
+        )
+        return Check("LLM configured", ok, detail)
     key = settings.anthropic_api_key
-    return Check("ANTHROPIC_API_KEY set", bool(key), "required for analysis + cover letters")
+    return Check("LLM configured", bool(key), "ANTHROPIC_API_KEY - required for analysis + letters")
 
 
 def _frontend_built() -> Check:

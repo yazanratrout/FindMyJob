@@ -19,6 +19,7 @@ setup:
     {{pip}} install --upgrade pip
     {{pip}} install -r requirements-dev.txt
     {{pip}} install -e .
+    -[ "$(uname)" = "Darwin" ] && chflags -R nohidden {{venv}}   # see `just fix-venv`
     {{py}} -m findmyjob db upgrade
     {{py}} -m findmyjob db seed
     -{{py}} -m findmyjob models fetch
@@ -29,6 +30,13 @@ setup:
 # Freeze the currently installed packages into requirements.lock
 lock:
     {{pip}} freeze --exclude-editable > requirements.lock
+
+# macOS: clear the "hidden" flag on .venv. Python 3.13's site.py silently skips
+# .pth files marked hidden, which breaks the editable install (ModuleNotFoundError:
+# findmyjob). Some macOS tools set that flag on dot-directories.
+fix-venv:
+    chflags -R nohidden {{venv}}
+    {{py}} -c "import findmyjob; print('ok:', findmyjob.__file__)"
 
 # ---- Run -------------------------------------------------------------------
 

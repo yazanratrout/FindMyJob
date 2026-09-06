@@ -16,6 +16,12 @@ os.environ["APP_ENV"] = "test"
 os.environ["APP_DATA_DIR"] = str(_TMP_DIR)
 os.environ["APP_DATABASE_URL"] = f"sqlite:///{(_TMP_DIR / 'test.db').as_posix()}"
 os.environ.setdefault("APP_SECRET_KEY", "test-secret-key")
+# Isolate tests from whatever LLM config the developer has in `.env`.
+os.environ["LLM_OFFLINE"] = "false"
+os.environ["LLM_PROVIDER"] = "anthropic"
+os.environ.pop("LLM_OPENAI_BASE_URL", None)
+os.environ.pop("LLM_OPENAI_API_KEY", None)
+os.environ.pop("ANTHROPIC_API_KEY", None)
 
 import pytest  # noqa: E402
 from sqlmodel import Session, select  # noqa: E402

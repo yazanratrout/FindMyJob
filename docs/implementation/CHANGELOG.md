@@ -5,6 +5,26 @@ by the checkpoint (CP) from [`IMPLEMENTATION_PLAN.md`](./IMPLEMENTATION_PLAN.md)
 
 ## Unreleased
 
+### OpenAI-compatible LLM provider
+- `LLM_PROVIDER=openai` + `LLM_OPENAI_BASE_URL` (+ optional `LLM_OPENAI_API_KEY`)
+  routes every model call to any OpenAI-style `/chat/completions` endpoint -
+  Groq, Google Gemini's OpenAI shim, Cerebras, a local Ollama. `LLM_MODEL_CHEAP`
+  / `LLM_MODEL_SMART` become that provider's model IDs. `httpx` only, no new dep.
+- Cost is recorded as €0 for non-Anthropic providers (the €-price table is
+  Anthropic's); the budget guard then relies on the provider's own quota.
+- `doctor`'s LLM check is provider-aware; `.env.example` + USER_GUIDE list the
+  free endpoints. 1 new test.
+- Fix: `tests/conftest.py` now pins `LLM_OFFLINE=false` / `LLM_PROVIDER=anthropic`
+  so a developer's `.env` can't leak into the suite.
+
+### Embedding model + macOS venv
+- `fastembed` 0.8 dropped `intfloat/multilingual-e5-small`; switched to
+  `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (the model named
+  in the plan).
+- `just fix-venv` + `just setup` now run `chflags -R nohidden .venv` on macOS:
+  Python 3.13's `site.py` silently skips `.pth` files marked *hidden*, which
+  some macOS tooling sets on dot-directories, breaking the editable install.
+
 ### `LLM_OFFLINE` stub mode
 - `LlmClient` honours `LLM_OFFLINE=true` (env): every `complete` / `complete_json`
   returns canned, schema-valid JSON per `LlmPurpose` instead of calling Anthropic
