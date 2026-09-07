@@ -1,10 +1,13 @@
 # Seed registry of Munich-area employers that hire students.
 #
-# `ats_type` + `ats_slug` are used to query a company's public job endpoint
-# directly. Where the ATS/slug is unknown, only `careers_url` is set and the
-# CP6 detector (or the user) fills in the rest later. Wrong slugs fail softly.
+# `ats_type` + `ats_slug` query a company's public job endpoint directly.
+# Where no public board is known, only `careers_url` is set and the JSON-LD
+# source reads the page instead. Wrong slugs fail softly (per-company).
 #
 # ats_type: greenhouse | lever | personio | smartrecruiters | ashby | none
+#
+# Every ats_slug below was verified live against the provider's API on
+# 2026-09-06. Re-check with `just doctor` if a connector starts returning 0.
 
 - name: Celonis
   ats_type: greenhouse
@@ -13,12 +16,14 @@
   city: München
 
 - name: Personio
-  ats_type: none
+  ats_type: personio
+  ats_slug: personio
   careers_url: https://www.personio.com/careers/
   city: München
 
 - name: inovex
-  ats_type: none          # ATS board retired (verified 2026-09-06)
+  ats_type: smartrecruiters
+  ats_slug: inovexgmbh
   careers_url: https://www.inovex.de/de/karriere/
   city: München
 
@@ -33,14 +38,15 @@
   city: München
 
 - name: FlixBus (Flix SE)
-  ats_type: none          # ATS board retired (verified 2026-09-06)
+  ats_type: greenhouse
+  ats_slug: flix
   careers_url: https://www.flix.com/company/jobs
   city: München
 
 - name: KONUX
   ats_type: greenhouse
   ats_slug: konux
-  careers_url: https://www.konux.com/careers/
+  careers_url: https://www.konux.com/careers
   city: München
 
 - name: Isar Aerospace
@@ -50,7 +56,7 @@
   city: Ottobrunn
 
 - name: Lilium
-  ats_type: none          # ATS board retired (verified 2026-09-06)
+  ats_type: none
   careers_url: https://lilium.com/careers
   city: Weßling
 
@@ -62,11 +68,12 @@
 - name: NavVis
   ats_type: greenhouse
   ats_slug: navvis
-  careers_url: https://www.navvis.com/company/careers
+  careers_url: https://www.navvis.com/careers
   city: München
 
 - name: ProGlove
-  ats_type: none          # ATS board retired (verified 2026-09-06)
+  ats_type: personio
+  ats_slug: proglove
   careers_url: https://www.proglove.com/careers/
   city: München
 
@@ -151,11 +158,132 @@
   city: München
 
 - name: Scalable Capital
-  ats_type: none          # ATS board retired (verified 2026-09-06)
+  ats_type: smartrecruiters
+  ats_slug: scalablegmbh
   careers_url: https://de.scalable.capital/en/careers
   city: München
 
 - name: Personio Talent (Wayfair Munich)
   ats_type: none
   careers_url: https://www.aboutwayfair.com/careers
+  city: München
+
+- name: Helsing
+  ats_type: greenhouse
+  ats_slug: helsing
+  careers_url: https://helsing.ai/jobs
+  city: München
+
+- name: commercetools
+  ats_type: greenhouse
+  ats_slug: commercetools
+  careers_url: https://commercetools.com/careers
+  city: München
+
+- name: KINEXON
+  ats_type: greenhouse
+  ats_slug: kinexon
+  careers_url: https://kinexon.com/careers
+  city: München
+
+- name: Marvel Fusion
+  ats_type: greenhouse
+  ats_slug: marvelfusion
+  careers_url: https://marvelfusion.com/careers
+  city: München
+
+- name: Sixt
+  ats_type: smartrecruiters
+  ats_slug: sixt
+  careers_url: https://www.sixt.jobs/
+  city: Pullach
+
+- name: CHECK24
+  ats_type: smartrecruiters
+  ats_slug: check24
+  careers_url: https://jobs.check24.de/
+  city: München
+
+- name: Brainlab
+  ats_type: smartrecruiters
+  ats_slug: brainlab
+  careers_url: https://www.brainlab.com/careers/
+  city: München
+
+- name: Westwing
+  ats_type: personio
+  ats_slug: westwing
+  careers_url: https://www.westwing.de/careers/
+  city: München
+
+- name: Holidu
+  ats_type: personio
+  ats_slug: holidu
+  careers_url: https://careers.holidu.com/
+  city: München
+
+- name: MaibornWolff
+  ats_type: personio
+  ats_slug: maibornwolff
+  careers_url: https://www.maibornwolff.de/karriere/
+  city: München
+
+- name: TNG Technology Consulting
+  ats_type: personio
+  ats_slug: tngtech
+  careers_url: https://www.tngtech.com/karriere/
+  city: Unterföhring
+
+- name: Alasco
+  ats_type: personio
+  ats_slug: alasco
+  careers_url: https://www.alasco.de/karriere
+  city: München
+
+- name: Tanso
+  ats_type: personio
+  ats_slug: tanso
+  careers_url: https://www.tanso.de/careers
+  city: München
+
+- name: Userlane
+  ats_type: personio
+  ats_slug: userlane
+  careers_url: https://www.userlane.com/careers/
+  city: München
+
+- name: appliedAI Initiative
+  ats_type: personio
+  ats_slug: appliedai
+  careers_url: https://www.appliedai.de/en/careers
+  city: München
+
+- name: Blickfeld
+  ats_type: personio
+  ats_slug: blickfeld
+  careers_url: https://www.blickfeld.com/careers/
+  city: München
+
+- name: Retorio
+  ats_type: personio
+  ats_slug: retorio
+  careers_url: https://www.retorio.com/careers
+  city: München
+
+- name: EGYM
+  ats_type: ashby
+  ats_slug: egym
+  careers_url: https://egym.com/careers
+  city: München
+
+- name: Langfuse
+  ats_type: ashby
+  ats_slug: langfuse
+  careers_url: https://langfuse.com/careers
+  city: München
+
+- name: Luminovo
+  ats_type: ashby
+  ats_slug: luminovo
+  careers_url: https://luminovo.com/careers
   city: München
